@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd pos-frontend && npm run build",
+  "outputDirectory": "pos-frontend/.next",
+  "installCommand": "cd pos-frontend && npm install",
+  "framework": "nextjs",
+  "rootDirectory": "pos-frontend"
+}
