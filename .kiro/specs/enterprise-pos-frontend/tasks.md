@@ -145,7 +145,7 @@ Tasks are ordered by dependency. Each task references the requirements and desig
 ## Phase 4: Zustand Stores & Custom Hooks
 
 - [~] 16. Implement Zustand stores
-  - [ ] 16.1 Implement `cartStore` with encrypted `persist` middleware, multi-cart support
+  - [x] 16.1 Implement `cartStore` with encrypted `persist` middleware, multi-cart support
   - [ ] 16.2 Implement `authStore` — session state, role, permissions (in-memory only, no persistence)
   - [ ] 16.3 Implement `shiftStore` — active shift state, elapsed time
   - [ ] 16.4 Implement `offlineStore` — connectivity status, pending sync count
@@ -202,16 +202,16 @@ Tasks are ordered by dependency. Each task references the requirements and desig
   - *References: Requirement 14*
 
 - [~] 22. Implement product catalog components
-  - [ ] 22.1 Implement `ProductSearch` — debounced input, barcode scanner input handler
-  - [ ] 22.2 Implement `ProductCard` — displays name, SKU, price, stock status badges ("Sin stock", "Stock bajo")
-  - [ ] 22.3 Implement `ProductGrid` — paginated grid (20 items/page), category filter tabs
+  - [x] 22.1 Implement `ProductSearch` — debounced input, barcode scanner input handler
+  - [x] 22.2 Implement `ProductCard` — displays name, SKU, price, stock status badges ("Sin stock", "Stock bajo")
+  - [x] 22.3 Implement `ProductGrid` — paginated grid (20 items/page), category filter tabs
   - [ ] 22.4 Implement `VariantSelector` — modal for selecting product variants before adding to cart
   - *References: Requirement 4*
 
 - [~] 23. Implement cart components
-  - [ ] 23.1 Implement `CartItem` — quantity editor, item discount, remove button
-  - [ ] 23.2 Implement `CartTotals` — pure display: subtotal, tax breakdown, discounts, total
-  - [ ] 23.3 Implement `CartPanel` — list of CartItems + CartTotals + coupon input + hold/resume controls
+  - [x] 23.1 Implement `CartItem` — quantity editor, item discount, remove button
+  - [x] 23.2 Implement `CartTotals` — pure display: subtotal, tax breakdown, discounts, total
+  - [x] 23.3 Implement `CartPanel` — list of CartItems + CartTotals + coupon input + hold/resume controls
   - [ ] 23.4 Implement multi-cart tab bar — shows up to N carts on hold, allows switching
   - *References: Requirement 5*
 
