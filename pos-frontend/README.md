@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛒 Sistema POS Sebastian
 
-## Getting Started
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 
-First, run the development server:
+Proyecto universitario de Arquitectura de Software: Un sistema de Punto de Venta (POS) moderno, funcional y robusto diseñado para la gestión de supermercados o cafeterías.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Características Principales
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🏪 Terminal de Ventas (Modo Cajero)
+- **Carrito de Compras Reactivo:** Permite agregar productos, modificar cantidades y calcula automáticamente el IVA (19%) y el subtotal en tiempo real.
+- **Validación de Inventario:** El sistema bloquea inteligentemente la venta si se intenta superar el stock físico disponible.
+- **Búsqueda Dinámica:** Búsqueda en tiempo real por nombre de producto o código SKU.
+- **Modal de Checkout Profesional:** Permite registrar la Cédula del Cliente, seleccionar qué cajero está atendiendo la venta, e incluye una calculadora automática de cambio (devuelta).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🛠️ Panel de Administración (Modo Admin)
+- **Gestión de Inventario:** Tabla de control para Crear, Editar (Precio/Stock) y Eliminar productos. Todos los cambios se reflejan al instante en la terminal de ventas.
+- **Reportes de Ventas:** Historial detallado de cada venta confirmada, incluyendo ingresos totales, cantidad de transacciones y un desglose por ticket.
+- **Gestión de Cajeros:** Interfaz para registrar nuevos cajeros, desactivar accesos temporales y gestionar la plantilla de empleados.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 💾 Persistencia de Datos
+Aunque actualmente el proyecto opera como una SPA (Single Page Application) independiente del backend, **cuenta con un sistema de persistencia local robusto** usando `Zustand`. Esto garantiza que los inventarios, las ventas y los usuarios creados sobrevivan aunque se recargue la página.
 
-## Learn More
+## 🚀 Cómo ejecutar el proyecto
 
-To learn more about Next.js, take a look at the following resources:
+1. **Instalar dependencias:**
+   Asegúrate de tener Node.js instalado, luego abre la terminal en la raíz del proyecto y ejecuta:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Levantar el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Abrir en el navegador:**
+   Haz clic en el enlace que aparece en la terminal (generalmente `http://localhost:5173`).
 
-## Deploy on Vercel
+## 🏗️ Próximos Pasos (Arquitectura Hexagonal)
+Este Frontend ha sido preparado siguiendo los requerimientos del Spec-Driven Development (SDD) del taller. La estructura está lista para conectarse mediante peticiones `fetch/axios` a la API RESTful de Java (Spring Boot) en el Backend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Desarrollado para la clase de Codificación y Pruebas de Software.*

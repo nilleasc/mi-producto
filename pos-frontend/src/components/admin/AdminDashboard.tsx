@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { useInventoryStore } from '../../stores/inventoryStore';
+import { useSalesStore } from '../../stores/salesStore';
+import { useUsersStore } from '../../stores/usersStore';
 
 export const AdminDashboard: React.FC = () => {
   const { products } = useInventoryStore();
+  const { sales } = useSalesStore();
+  const { cashiers } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'inventory' | 'reports' | 'users'>('inventory');
 
   const formatCOP = (val: number) => new Intl.NumberFormat('es-CO', {
@@ -10,6 +14,9 @@ export const AdminDashboard: React.FC = () => {
     currency: 'COP',
     minimumFractionDigits: 0
   }).format(val);
+
+  const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalSales = sales.length;
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -135,22 +142,118 @@ export const AdminDashboard: React.FC = () => {
         )}
 
         {activeTab === 'reports' && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <p className="font-medium text-lg">Módulo de reportes en construcción.</p>
-            <p className="text-sm">Aquí se conectará la API de ventas del backend.</p>
+          <div className="flex flex-col gap-8">
+            <div className="grid grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <span className="text-gray-500 font-bold text-xs uppercase tracking-widest block mb-2">Ingresos Totales</span>
+                <span className="text-4xl font-black text-blue-600">{formatCOP(totalRevenue)}</span>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <span className="text-gray-500 font-bold text-xs uppercase tracking-widest block mb-2">Ventas Realizadas</span>
+                <span className="text-4xl font-black text-gray-900">{totalSales}</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-xl font-black text-gray-900">Historial de Ventas</h3>
+              </div>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
+                    <th className="p-4 font-bold">Fecha</th>
+                    <th className="p-4 font-bold">ID Venta</th>
+                    <th className="p-4 font-bold">Cajero</th>
+                    <th className="p-4 font-bold">Cliente</th>
+                    <th className="p-4 font-bold text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sales.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-gray-500 font-medium">No hay ventas registradas aún.</td>
+                    </tr>
+                  ) : (
+                    sales.map(sale => (
+                      <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="p-4 text-sm font-medium text-gray-600">{new Date(sale.date).toLocaleString('es-CO')}</td>
+                        <td className="p-4 text-sm font-mono text-gray-500">#{sale.id}</td>
+                        <td className="p-4 text-sm font-bold text-gray-900">{sale.sellerId}</td>
+                        <td className="p-4 text-sm text-gray-700">{sale.buyerId}</td>
+                        <td className="p-4 text-sm font-black text-gray-900 text-right">{formatCOP(sale.total)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {activeTab === 'users' && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <p className="font-medium text-lg">Módulo de cajeros en construcción.</p>
-            <p className="text-sm">Aquí podrás crear accesos y contraseñas para los vendedores.</p>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="text-xl font-black text-gray-900">Gestión de Cajeros</h3>
+              <button 
+                onClick={() => {
+                  const cedula = prompt('Cédula del nuevo cajero:');
+                  if (!cedula) return;
+                  const name = prompt('Nombre del cajero:');
+                  if (!name) return;
+                  
+                  useUsersStore.getState().addCashier({
+                    id: Math.random().toString(36).substr(2, 9),
+                    cedula,
+                    name,
+                    isActive: true
+                  });
+                }}
+                className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm"
+              >
+                + Nuevo Cajero
+              </button>
+            </div>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
+                  <th className="p-4 font-bold">Cédula</th>
+                  <th className="p-4 font-bold">Nombre</th>
+                  <th className="p-4 font-bold">Estado</th>
+                  <th className="p-4 font-bold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cashiers.map(cashier => (
+                  <tr key={cashier.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="p-4 text-sm font-mono text-gray-600">{cashier.cedula}</td>
+                    <td className="p-4 text-sm font-bold text-gray-900">{cashier.name}</td>
+                    <td className="p-4 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${cashier.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {cashier.isActive ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <button 
+                        onClick={() => useUsersStore.getState().toggleStatus(cashier.id)}
+                        className={`font-bold text-sm mr-4 ${cashier.isActive ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'}`}
+                      >
+                        {cashier.isActive ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`¿Seguro que deseas eliminar al cajero ${cashier.name}?`)) {
+                            useUsersStore.getState().deleteCashier(cashier.id);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 font-bold text-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

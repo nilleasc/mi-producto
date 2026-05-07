@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useCartStore } from '../../../stores/cartStore';
 import { useInventoryStore } from '../../../stores/inventoryStore';
+import { useSalesStore } from '../../../stores/salesStore';
+import { useUsersStore } from '../../../stores/usersStore';
 
 export const CartPanel: React.FC = () => {
   const { carts, activeCartId, actions } = useCartStore();
   const { products } = useInventoryStore();
+  const { addSale } = useSalesStore();
   const cart = activeCartId ? carts[activeCartId] : null;
 
   const [showCheckout, setShowCheckout] = useState(false);
@@ -34,13 +37,31 @@ export const CartPanel: React.FC = () => {
   }).format(val);
 
   const handleFinishSale = () => {
+    // 1. Deduct stock from global inventory
+    cart.items.forEach(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (product) {
+        useInventoryStore.getState().updateProduct({
+          ...product,
+          stock: product.stock - item.quantity
+        });
+      }
+    });
+
+    // 2. Save the sale locally
+    addSale({
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString(),
+      buyerId: buyerId || 'Consumidor Final',
+      sellerId: sellerId,
+      items: [...cart.items],
+      subtotal,
+      tax,
+      total,
+      cashReceived: Number(cashReceived)
+    });
+
     alert(`¡Venta Exitosa!\nTotal: ${formatCOP(total)}\nCliente: ${buyerId || 'Consumidor Final'}\nVendedor: ${sellerId}`);
-    
-    // In a real app, we would deduct the stock here:
-    // cart.items.forEach(item => {
-    //   const product = products.find(p => p.id === item.productId);
-    //   if (product) useInventoryStore.getState().updateProduct({...product, stock: product.stock - item.quantity});
-    // });
 
     actions.clearCart();
     setShowCheckout(false);
@@ -156,9 +177,10 @@ export const CartPanel: React.FC = () => {
                 value={sellerId}
                 onChange={(e) => setSellerId(e.target.value)}
               >
-                <option value="cajero_1">Sebastian (Cajero 1)</option>
-                <option value="cajero_2">María (Cajero 2)</option>
-                <option value="admin_1">Administrador</option>
+                <option value="">Selecciona un cajero...</option>
+                {useUsersStore.getState().cashiers.filter(c => c.isActive).map(cashier => (
+                  <option key={cashier.id} value={cashier.name}>{cashier.name} (CC: {cashier.cedula})</option>
+                ))}
               </select>
             </div>
 
