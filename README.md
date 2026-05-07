@@ -9,6 +9,8 @@
 
 Proyecto universitario de Arquitectura de Software: Un sistema de Punto de Venta (POS) moderno, funcional y robusto diseñado para la gestión de supermercados o cafeterías.
 
+![Pantalla de Inicio](screenshots/home.png)
+
 Este repositorio está dividido en dos partes principales bajo los requerimientos de la metodología **Spec-Driven Development (SDD)** y Arquitectura Hexagonal.
 
 ## 📂 Estructura del Proyecto
@@ -24,11 +26,13 @@ Este repositorio está dividido en dos partes principales bajo los requerimiento
 Para ver el Frontend en acción, navega a la carpeta `pos-frontend/`.
 
 ### 🏪 Terminal de Ventas (Modo Cajero)
+![Terminal POS](screenshots/cajero.png)
 - **Carrito de Compras Reactivo:** Permite agregar productos, modificar cantidades y calcula automáticamente el IVA (19%) y el subtotal en tiempo real.
 - **Validación de Inventario:** El sistema bloquea inteligentemente la venta si se intenta superar el stock físico disponible.
 - **Modal de Checkout Profesional:** Permite registrar la Cédula del Cliente, seleccionar qué cajero está atendiendo la venta, e incluye una calculadora automática de cambio.
 
 ### 🛠️ Panel de Administración (Modo Admin)
+![Panel de Administración](screenshots/admin.png)
 - **Gestión de Inventario:** Tabla de control para Crear, Editar (Precio/Stock) y Eliminar productos.
 - **Reportes de Ventas:** Historial detallado de cada venta confirmada.
 - **Gestión de Cajeros:** Interfaz para registrar nuevos cajeros, desactivar accesos temporales y gestionar la plantilla de empleados.
