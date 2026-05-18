@@ -1,25 +1,23 @@
 # Sales API Design
 
 ## Architecture
-- **Layered Pattern:** Arquitectura Hexagonal (Ports and Adapters).
+- **Layered Pattern:** Microservicios Serverless (AWS Lambda).
   - `domain`: Entities, Value Objects (`Money`).
   - `application`: Business Use Cases (`SaleService`).
-  - `adapter`: Inbound/Outbound adapters (`SaleController`, REST integrations).
-  - `infrastructure`: Database configuration, Repositories (Spring Data JPA).
+  - `adapter`: Inbound/Outbound adapters (`CrearVentaHandler`, REST integrations via API Gateway).
+  - `infrastructure`: Database configuration, Repositories (AWS DynamoDB SDK v2), `template.yml` (AWS SAM).
 
 ## Domain Model
-- `Sale`: id, terminalId, cashierId, customerId, status, subtotal, tax, discount, total, paymentType, createdAt.
-- `SaleItem`: id, saleId, productId, productName, unitPrice, quantity, lineTotal.
+- `Sale`: ventaId, fecha, total, items.
+- `Product`: productoId, nombre, precio, stock.
 
 ## Tech Stack
-- Java 17, Spring Boot 3.x
-- Spring Data JPA, H2 Database (in-memory)
-- SpringDoc OpenAPI
-- JaCoCo, JUnit 5, Mockito
+- Java 17, AWS Lambda Core
+- Amazon DynamoDB (NoSQL), Amazon API Gateway
+- AWS SAM (Serverless Application Model) para IaC
+- Gson, JUnit 5, Mockito
 
 ## API Endpoints
-- `GET /api/products`
-- `GET /api/products/search?q={query}`
-- `POST /api/sales`
-- `POST /api/sales/{id}/items`
-- `POST /api/sales/{id}/checkout`
+- `GET /productos`
+- `GET /productos/search?q={query}`
+- `POST /ventas`

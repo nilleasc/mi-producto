@@ -2,53 +2,86 @@
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
 
-Proyecto universitario de Diseño de Aplicaciones Avanzadas: Un sistema de Punto de Venta (POS) desarrollado usando la metodología **Spec-Driven Development (SDD)** y **Arquitectura Hexagonal (Puertos y Adaptadores)**.
-
-![Pantalla de Inicio](screenshots/home.png)
-
-## 📂 Estructura del Proyecto
-
-El repositorio está dividido en dos partes principales, ambas siguiendo principios SOLID y Arquitectura Limpia:
-
-- `pos-frontend/`: Aplicación cliente (Terminal POS para el Cajero) construida con React, TypeScript y Zustand. Estructurada bajo `core`, `features` y `adapters`.
-- `pos-sales-api/`: API RESTful para la gestión de ventas, construida con Java 17 y Spring Boot. Estructurada bajo `domain`, `application`, `adapter` e `infrastructure`.
-- `docs/`: Archivos de documentación y reflexiones sobre SDD.
-- `.kiro/`: Contiene los archivos de especificación (`requirements.md`, `design.md`, `tasks.md`).
+Proyecto universitario de Arquitectura de Software y Cómputo en la Nube: Un sistema de Punto de Venta (POS) y facturación modular, implementando una terminal web en el frontend y una arquitectura de **Microservicios Serverless** en el backend sobre **Amazon Web Services (AWS)**.
 
 ---
 
-## ✨ Características del Frontend
+## 📂 Estructura del Repositorio
 
-![Terminal POS](screenshots/cajero.png)
+El proyecto está dividido en dos microservicios independientes que garantizan alta escalabilidad y desacoplamiento:
 
-- **Búsqueda Dinámica (Fuzzy Search):** La cuadrícula de productos no se muestra por defecto. Los productos solo aparecen en tiempo real mientras el cajero escribe el nombre o escanea el código de barras.
-- **Carrito de Compras:** Cálculo en tiempo real del subtotal, IVA (19%) y total.
-- **Arquitectura Hexagonal:** Separación estricta entre la lógica de negocio (`core`), la UI (`features`) y los gestores de estado (`adapters`).
-
-## ✨ Características del Backend API
-
-- **Manejo Preciso del Dinero:** Uso estricto de `BigDecimal` en todos los cálculos monetarios.
-- **Flujo de Ventas Completo:** Creación de ventas, adición de items con validación de stock, y proceso de Checkout.
-- **Base de Datos en Memoria:** Uso de H2 y Spring Data JPA para la persistencia inmediata.
+*   **`pos-frontend/`**: Aplicación web del cajero (Terminal POS) construida con React, TypeScript y Zustand. Cuenta con atajos de teclado del cajero (`F2`, `F3`, `F4`), buscador con autocompletado y cálculo automático de IVA y cambio.
+*   **`pos-backend/`**: Backend Serverless construido en **Java 17** para ejecutarse sobre **AWS Lambda**, exponiendo endpoints REST a través de **AWS API Gateway** y persistiendo las transacciones de forma segura en **AWS DynamoDB**.
+    *   `src/main/java/com/pos/handlers/CrearVentaHandler.java`: Manejador de la función Lambda que procesa y registra las ventas en la nube.
+    *   `infraestructura/template.yml`: Plantilla de Infraestructura como Código (IaC) escrita para **AWS SAM (Serverless Application Model)**.
 
 ---
 
-## 🚀 Cómo ejecutar el proyecto
+## ☁️ Arquitectura Serverless en AWS
 
-### 1. Levantar el Frontend
-```bash
-cd pos-frontend
-npm install
-npm run dev
+El backend ha sido reestructurado para migrar de una arquitectura local tradicional a una solución moderna sin servidores en la nube:
+
+```mermaid
+graph LR
+    A[Terminal Frontend - React] -->|POST /ventas| B[Amazon API Gateway]
+    B -->|Trigger JSON| C[AWS Lambda - Java 17]
+    C -->|PutItem| D[Amazon DynamoDB - Tabla: ventas]
 ```
 
-### 2. Levantar el Backend (API)
-Abre la carpeta `pos-sales-api` en tu IDE de Java (IntelliJ IDEA o VS Code) y ejecuta la clase principal `PosSalesApplication.java`, o usa el comando de Maven:
+### 🔀 Migración Tecnológica: De XAMPP (Local) a AWS DynamoDB (Nube)
+En arquitecturas tradicionales se suele utilizar **XAMPP** para inicializar bases de datos relacionales locales (MySQL). Para este diseño moderno de nube, **hemos migrado a una base de datos NoSQL nativa de la nube (Amazon DynamoDB)**:
+*   **Sin servidores (Serverless):** No requieres iniciar servicios locales de Apache o MySQL con XAMPP. La base de datos vive directamente en la infraestructura elástica de AWS, disponible en cualquier momento.
+*   **Velocidad de Caja Registradora:** DynamoDB procesa operaciones de lectura y escritura en milisegundos de un solo dígito, garantizando facturación instantánea.
+*   **Microservicios Desacoplados:** Cada servicio tiene su propia tabla NoSQL independiente con claves de partición optimizadas (`ventaId` y `productoId`).
+
+---
+
+## 📸 Evidencias de Despliegue en AWS (Capturas de Pantalla)
+
+> [!NOTE]
+> *Espacio reservado para las capturas del reporte del proyecto. Agrega tus imágenes en las rutas correspondientes:*
+
+### 1. Configuración de Seguridad (AWS IAM)
+*Sección que muestra el usuario programático `dev-sebastian` creado con las políticas de permisos `AmazonDynamoDBFullAccess`, `AWSLambda_FullAccess` y `AmazonAPIGatewayAdministrator`.*
+
+`[Arrastra tu captura de IAM aquí o reemplaza esta línea con: ![IAM](screenshots/aws_iam.png)]`
+
+### 2. Base de Datos NoSQL (AWS DynamoDB)
+*Sección que muestra la creación exitosa de las dos tablas (`ventas` y `productos`) con sus respectivas claves de partición en estado Activo.*
+
+`[Arrastra tu captura de DynamoDB aquí o reemplaza esta línea con: ![DynamoDB](screenshots/aws_dynamodb.png)]`
+
+### 3. Capa de Red y API (AWS API Gateway)
+*Sección que muestra el Endpoint de red expuesto `/ventas` con el método HTTP `POST` configurado como disparador de la función Lambda.*
+
+`[Arrastra tu captura de API Gateway aquí o reemplaza esta línea con: ![API Gateway](screenshots/aws_apigateway.png)]`
+
+---
+
+## 🛠️ Cómo Compilar y Desplegar el Backend
+
+### Prerrequisitos
+1.  **Java JDK 17 o superior** instalado y configurado en el sistema.
+2.  **AWS CLI** configurado localmente con las llaves de acceso de tu usuario IAM (`aws configure`).
+3.  **AWS SAM CLI** instalado para gestionar el empaquetado y despliegue del YAML.
+
+### Paso 1: Compilar el proyecto Java
+Entra a la carpeta del backend y ejecuta el comando de construcción (se incluye un entorno local portable para que no requieras configuraciones complejas de variables de entorno):
 ```bash
-cd pos-sales-api
-./mvnw spring-boot:run
+cd pos-backend
+./apache-maven-3.9.6/bin/mvn.cmd clean package
 ```
+Esto generará un archivo "Fat-Jar" optimizado en `pos-backend/target/pos-backend-1.0.0.jar` que contiene todo el código compilado junto con el SDK de AWS DynamoDB.
+
+### Paso 2: Desplegar en la Nube con AWS SAM
+Desde la carpeta del backend, inicializa el asistente de despliegue interactivo de SAM:
+```bash
+sam deploy --guided
+```
+Sigue el asistente indicando el nombre de la pila (ej. `pos-supermarket-stack`) y la región de AWS (ej. `us-east-1`). El sistema leerá la plantilla `infraestructura/template.yml`, aprovisionará las tablas DynamoDB automáticamente, configurará el API Gateway y subirá la función Lambda compilada a la nube.
+
+---
+*Desarrollado para la entrega final de Arquitectura de Software y Sistemas Distribuidos.*
