@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import './app/globals.css';
 import SalePage from './app/(pos)/sale/page';
+import LoginPage from './app/(auth)/login/page';
 
 function App() {
-  const [session, setSession] = useState<{ started: boolean }>({
-    started: false
+  const [session, setSession] = useState<{ isAuthenticated: boolean }>({
+    isAuthenticated: false
   });
 
-  const startSession = () => {
-    setSession({ started: true });
+  const handleLoginSuccess = () => {
+    setSession({ isAuthenticated: true });
   };
 
-  if (session.started) {
+  const handleLogout = () => {
+    setSession({ isAuthenticated: false });
+  };
+
+  if (session.isAuthenticated) {
     return (
       <div className="h-screen flex flex-col">
         <header className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
@@ -23,8 +28,8 @@ function App() {
             </span>
           </div>
           <button 
-            onClick={() => setSession({ started: false })}
-            className="text-xs font-bold text-slate-400 hover:text-white transition-colors"
+            onClick={handleLogout}
+            className="text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             Cerrar Sesión
           </button>
@@ -36,33 +41,9 @@ function App() {
     );
   }
 
+  // Renders the Login page first
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-      <main className="w-full max-w-4xl glass rounded-[40px] shadow-2xl p-12 md:p-20 flex flex-col items-center text-center border border-white/40">
-        <div className="w-20 h-20 bg-blue-600 rounded-3xl shadow-xl shadow-blue-500/40 flex items-center justify-center mb-8 rotate-3">
-          <span className="text-white text-4xl font-black">P</span>
-        </div>
-        <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-white mb-6">
-          POS <span className="text-blue-600">Sebastian</span>
-        </h1>
-        <p className="text-xl text-slate-500 dark:text-slate-400 max-w-lg mb-12 font-medium">
-          Sistema de punto de venta optimizado para flujos de alta velocidad y gestión multi-perfil.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md">
-          <button
-            onClick={() => startSession()}
-            className="flex-1 py-5 bg-slate-900 dark:bg-white dark:text-black text-white rounded-2xl font-black text-lg hover:scale-[1.02] transition-all shadow-xl active:scale-95 w-full"
-          >
-            Abrir Terminal POS
-          </button>
-        </div>
-        
-        <footer className="mt-16 text-slate-400 text-xs font-bold uppercase tracking-widest">
-          Desarrollado para Diseño de Aplicaciones Avanzadas
-        </footer>
-      </main>
-    </div>
+    <LoginPage onLoginSuccess={handleLoginSuccess} />
   );
 }
 

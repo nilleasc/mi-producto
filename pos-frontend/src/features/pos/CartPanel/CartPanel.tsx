@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCartStore } from '../../../adapters/state/cartStore';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { useSalesStore } from '../../../adapters/state/salesStore';
@@ -11,6 +11,20 @@ export const CartPanel: React.FC = () => {
   const cart = activeCartId ? carts[activeCartId] : null;
 
   const [showCheckout, setShowCheckout] = useState(false);
+
+  // Escuchar atajos de teclado globales de la pantalla cajero
+  useEffect(() => {
+    const onClear = () => actions.clearCart();
+    const onCheckout = () => {
+      if (cart && cart.items.length > 0) setShowCheckout(true);
+    };
+    window.addEventListener('pos:clearCart', onClear);
+    window.addEventListener('pos:checkout', onCheckout);
+    return () => {
+      window.removeEventListener('pos:clearCart', onClear);
+      window.removeEventListener('pos:checkout', onCheckout);
+    };
+  }, [actions, cart]);
   const [buyerId, setBuyerId] = useState('');
   const [sellerId, setSellerId] = useState('cajero_1');
   const [cashReceived, setCashReceived] = useState('');

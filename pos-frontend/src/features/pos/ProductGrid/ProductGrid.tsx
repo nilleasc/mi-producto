@@ -4,6 +4,9 @@ import { ProductCard } from './ProductCard';
 import { Product } from '../../../core/entities/Product';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 
+const normalize = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 interface ProductGridProps {
   onAddToCart: (product: Product, quantity: number) => void;
 }
@@ -19,31 +22,47 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ onAddToCart }) => {
       setHasSearched(false);
       return;
     }
-    const q = query.toLowerCase();
-    const results = products.filter(p => 
-      p.name.toLowerCase().includes(q) || 
-      (p.sku as unknown as string).toLowerCase().includes(q)
+    const q = normalize(query);
+    const results = products.filter(
+      (p) =>
+        normalize(p.name).includes(q) ||
+        normalize(String(p.sku)).includes(q),
     );
     setFilteredProducts(results);
     setHasSearched(true);
   };
 
   const handleBarcodeScan = (barcode: string) => {
-    const product = products.find(p => (p.sku as unknown as string) === barcode);
+    const product = products.find((p) => (p.sku as unknown as string) === barcode);
     if (product && product.stock > 0) {
       onAddToCart(product, 1);
     }
   };
 
+  // Selección directa desde el autocomplete → agrega al carrito inmediatamente
+  const handleSelectSuggestion = (product: Product) => {
+    if (product.stock > 0) {
+      onAddToCart(product, 1);
+    }
+    // Actualiza el grid también para mostrar el producto seleccionado
+    setFilteredProducts([product]);
+    setHasSearched(true);
+  };
+
   return (
     <div className="flex flex-col gap-6 h-full">
-      <ProductSearch onSearch={handleSearch} onBarcodeScan={handleBarcodeScan} />
+      <ProductSearch
+        onSearch={handleSearch}
+        onBarcodeScan={handleBarcodeScan}
+        products={products}
+        onSelectSuggestion={handleSelectSuggestion}
+      />
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto pb-20">
-        {filteredProducts.map(product => (
-          <ProductCard 
-            key={product.id} 
-            product={product} 
-            onAdd={(p) => onAddToCart(p, 1)} 
+        {filteredProducts.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAdd={(p) => onAddToCart(p, 1)}
           />
         ))}
         {!hasSearched && (
