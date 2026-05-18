@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: POS System Backend - Microservicios y Base de Datos (DynamoDB)
+
+Resources:
+  # 1. Tabla DynamoDB para Ventas
+  TablaVentas:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: ventas
+      PrimaryKey:
+        Name: ventaId
+        Type: String
+
+  # 2. Tabla DynamoDB para Productos
+  TablaProductos:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: productos
+      PrimaryKey:
+        Name: productoId
+        Type: String
+
+  # 3. Función Lambda + API Gateway para procesar las ventas
+  CrearVentaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # Apunta al archivo .jar compilado por Maven
+      CodeUri: ../target/pos-backend-1.0.0.jar
+      Handler: com.pos.handlers.CrearVentaHandler::handleRequest
+      Runtime: java17
+      MemorySize: 512
+      Timeout: 15
+      Policies:
+        # Permiso para guardar ventas
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaVentas
+        # Permiso para leer productos (validar precios)
+        - DynamoDBReadPolicy:
+            TableName: !Ref TablaProductos
+      Events:
+        ApiVenta:
+          Type: Api
+          Properties:
+            Path: /ventas
+            Method: post
