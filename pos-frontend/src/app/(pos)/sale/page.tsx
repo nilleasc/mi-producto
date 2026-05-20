@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ProductGrid } from '../../../features/pos/ProductGrid/ProductGrid';
 import { CartPanel } from '../../../features/pos/CartPanel/CartPanel';
 import { useCartStore } from '../../../adapters/state/cartStore';
+import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { Product } from '../../../core/entities/Product';
 
 // ─── Definición de atajos ────────────────────────────────────────────────────
@@ -22,6 +23,11 @@ export default function SalePage() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const shortcutBtnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // ─── Cargar catálogo desde la API ──────────────────────────────────────
+  useEffect(() => {
+    useInventoryStore.getState().fetchProducts();
+  }, []);
 
   // ─── Acciones desde el carrito para disparar desde atajos ───────────────
   // Necesitamos acceso a la función cobrar del CartPanel; la coordinamos

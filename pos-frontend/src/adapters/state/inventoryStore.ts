@@ -13,15 +13,44 @@ const INITIAL_PRODUCTS: Product[] = [
 
 interface InventoryState {
   products: Product[];
+  isLoading: boolean;
+  error: string | null;
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
+  fetchProducts: () => Promise<void>;
 }
 
 export const useInventoryStore = create<InventoryState>()(
   persist(
     (set) => ({
       products: INITIAL_PRODUCTS,
+      isLoading: false,
+      error: null,
+      fetchProducts: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const { apiClient } = await import('../../infrastructure/http/apiClient');
+          const data = await apiClient.get('/productos');
+          // Mapear los datos de DynamoDB al modelo del frontend
+          const mappedProducts = data.map((item: any) => ({
+            id: item.productoId || item.id,
+            sku: item.sku,
+            name: item.nombre || item.name,
+            price: { amount: Number(item.precio || item.price?.amount), currency: item.moneda || 'COP' },
+            stock: Number(item.stock),
+            categoryId: item.categoria || item.categoryId,
+            variants: [],
+            isActive: item.activo !== false,
+            imageUrl: null,
+            unitOfMeasure: 'UND'
+          }));
+          set({ products: mappedProducts, isLoading: false });
+        } catch (error: any) {
+          console.error("Error fetching products:", error);
+          set({ error: error.message, isLoading: false });
+        }
+      },
       addProduct: (product) => set((state) => ({ products: [...state.products, product] })),
       updateProduct: (updatedProduct) => set((state) => ({
         products: state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p)

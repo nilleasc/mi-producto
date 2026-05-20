@@ -3,6 +3,7 @@ import { useCartStore } from '../../../adapters/state/cartStore';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { useSalesStore } from '../../../adapters/state/salesStore';
 import { useUsersStore } from '../../../adapters/state/usersStore';
+import { apiClient } from '../../../infrastructure/http/apiClient';
 
 export const CartPanel: React.FC = () => {
   const { carts, activeCartId, actions } = useCartStore();
@@ -11,6 +12,31 @@ export const CartPanel: React.FC = () => {
   const cart = activeCartId ? carts[activeCartId] : null;
 
   const [showCheckout, setShowCheckout] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const VALID_COUPONS: Record<string, number> = {
+    'DESC10': 0.10,
+  };
+
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (VALID_COUPONS[code] !== undefined) {
+      setAppliedCoupon({ code, discount: VALID_COUPONS[code] });
+      setCouponError('');
+    } else {
+      setAppliedCoupon(null);
+      setCouponError('Cupón inválido. Intenta con DESC10.');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
 
   // Escuchar atajos de teclado globales de la pantalla cajero
   useEffect(() => {
@@ -41,8 +67,10 @@ export const CartPanel: React.FC = () => {
   };
 
   const subtotal = cart.items.reduce((sum, item) => sum + (((item.unitPrice as any)?.amount || 0) * item.quantity), 0);
-  const tax = Math.round(subtotal * 0.19); // 19% IVA Colombia
-  const total = subtotal + tax;
+  const discountAmount = appliedCoupon ? Math.round(subtotal * appliedCoupon.discount) : 0;
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  const tax = Math.round(subtotalAfterDiscount * 0.19); // 19% IVA Colombia
+  const total = subtotalAfterDiscount + tax;
 
   const formatCOP = (val: number) => new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -50,37 +78,63 @@ export const CartPanel: React.FC = () => {
     minimumFractionDigits: 0
   }).format(val);
 
-  const handleFinishSale = () => {
-    // 1. Deduct stock from global inventory
-    cart.items.forEach(item => {
-      const product = products.find(p => p.id === item.productId);
-      if (product) {
-        useInventoryStore.getState().updateProduct({
-          ...product,
-          stock: product.stock - item.quantity
-        });
-      }
-    });
+  const handleFinishSale = async () => {
+    setIsSubmitting(true);
+    
+    // Format payload for backend
+    const payload = {
+      total: total,
+      cajero: sellerId || 'cajero_1',
+      items: cart.items.map(item => ({
+        id: item.productId,
+        nombre: item.productName,
+        cantidad: item.quantity,
+        precio: (item.unitPrice as any)?.amount || 0
+      }))
+    };
 
-    // 2. Save the sale locally
-    addSale({
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString(),
-      buyerId: buyerId || 'Consumidor Final',
-      sellerId: sellerId,
-      items: [...cart.items],
-      subtotal,
-      tax,
-      total,
-      cashReceived: Number(cashReceived)
-    });
+    try {
+      // Send to Java Backend
+      await apiClient.post('/ventas', payload);
+      
+      // 1. Deduct stock from global inventory
+      cart.items.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+          useInventoryStore.getState().updateProduct({
+            ...product,
+            stock: product.stock - item.quantity
+          });
+        }
+      });
 
-    alert(`¡Venta Exitosa!\nTotal: ${formatCOP(total)}\nCliente: ${buyerId || 'Consumidor Final'}\nVendedor: ${sellerId}`);
+      // 2. Save the sale locally (for offline history)
+      addSale({
+        id: Math.random().toString(36).substr(2, 9),
+        date: new Date().toISOString(),
+        buyerId: buyerId || 'Consumidor Final',
+        sellerId: sellerId,
+        items: [...cart.items],
+        subtotal,
+        discount: discountAmount,
+        tax,
+        total,
+        cashReceived: Number(cashReceived)
+      });
 
-    actions.clearCart();
-    setShowCheckout(false);
-    setBuyerId('');
-    setCashReceived('');
+      alert(`¡Venta Exitosa!\nTotal: ${formatCOP(total)}\nCliente: ${buyerId || 'Consumidor Final'}\nVendedor: ${sellerId}\n\n✅ Guardada en DynamoDB Local.`);
+
+      actions.clearCart();
+      setShowCheckout(false);
+      setBuyerId('');
+      setCashReceived('');
+      handleRemoveCoupon();
+    } catch (error) {
+      alert("❌ Error al guardar la venta en el backend.");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const change = Number(cashReceived) - total;
@@ -136,16 +190,55 @@ export const CartPanel: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-white p-8 border-t border-gray-200">
-        <div className="flex justify-between text-gray-500 text-sm mb-2 font-medium">
+      <div className="bg-white p-6 border-t border-gray-200">
+
+        {/* --- Campo de Cupón --- */}
+        <div className="mb-4">
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-xl px-4 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-green-600 font-bold text-sm">🎟️ {appliedCoupon.code}</span>
+                <span className="text-green-700 text-xs font-medium">−{(appliedCoupon.discount * 100).toFixed(0)}% aplicado</span>
+              </div>
+              <button onClick={handleRemoveCoupon} className="text-xs text-red-500 font-bold hover:underline">Quitar</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Ingresar cupón"
+                className="flex-1 px-3 py-2 border-2 border-gray-400 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-gray-700 placeholder-gray-300 transition-colors"
+                value={couponCode}
+                onChange={(e) => { setCouponCode(e.target.value); setCouponError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+              />
+              <button
+                onClick={handleApplyCoupon}
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-700 transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
+          )}
+          {couponError && <p className="text-red-500 text-xs mt-1 font-medium">{couponError}</p>}
+        </div>
+
+        {/* --- Desglose de totales --- */}
+        <div className="flex justify-between text-gray-500 text-sm mb-1 font-medium">
           <span>Subtotal</span>
           <span className="text-gray-900">{formatCOP(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-gray-500 text-sm mb-6 font-medium">
+        {appliedCoupon && (
+          <div className="flex justify-between text-green-600 text-sm mb-1 font-bold">
+            <span>Descuento ({(appliedCoupon.discount * 100).toFixed(0)}%)</span>
+            <span>− {formatCOP(discountAmount)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-gray-500 text-sm mb-4 font-medium">
           <span>IVA (19%)</span>
           <span className="text-gray-900">{formatCOP(tax)}</span>
         </div>
-        <div className="flex justify-between items-end mb-8">
+        <div className="flex justify-between items-end mb-6">
           <span className="text-gray-400 font-bold text-xs uppercase tracking-widest">Total a pagar</span>
           <span className="text-4xl font-black text-gray-900 tracking-tighter">
             {formatCOP(total)}
@@ -170,6 +263,12 @@ export const CartPanel: React.FC = () => {
           <div className="flex-1 flex flex-col gap-6">
             <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center">
               <span className="text-blue-500 font-bold text-xs uppercase tracking-widest block mb-2">Total a Pagar</span>
+              {appliedCoupon && (
+                <div className="flex justify-center items-center gap-2 mb-2">
+                  <span className="line-through text-blue-300 text-lg">{formatCOP(subtotal + Math.round(subtotal * 0.19))}</span>
+                  <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">🎟️ -{(appliedCoupon.discount * 100).toFixed(0)}%</span>
+                </div>
+              )}
               <span className="text-5xl font-black text-blue-700">{formatCOP(total)}</span>
             </div>
 
@@ -219,10 +318,18 @@ export const CartPanel: React.FC = () => {
 
           <button 
             onClick={handleFinishSale}
-            disabled={Number(cashReceived) < total}
-            className="w-full mt-6 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-lg shadow-lg disabled:bg-gray-300 disabled:text-gray-500 transition-all"
+            disabled={Number(cashReceived) < total || isSubmitting}
+            className="w-full mt-6 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-lg shadow-lg disabled:bg-gray-300 disabled:text-gray-500 transition-all flex justify-center items-center gap-2"
           >
-            CONFIRMAR VENTA
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                PROCESANDO...
+              </>
+            ) : 'CONFIRMAR VENTA'}
           </button>
         </div>
       )}

@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: POS System Backend - Microservicios y Base de Datos (DynamoDB)
 
+# Variables globales para todas las funciones Lambda
+Globals:
+  Function:
+    Environment:
+      Variables:
+        IS_LOCAL: "false"  # Cambiar a "true" para pruebas locales con DynamoDB Local
+
 Resources:
   # 1. Tabla DynamoDB para Ventas
   TablaVentas:
@@ -44,3 +51,19 @@ Resources:
           Properties:
             Path: /ventas
             Method: post
+
+  # 4. Función Lambda + API Gateway para obtener productos
+  ObtenerProductosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../target/pos-backend-1.0.0.jar
+      Handler: com.pos.handlers.ObtenerProductosHandler::handleRequest
+      Runtime: java17
+      MemorySize: 512
+      Timeout: 10
+      Events:
+        ApiProductos:
+          Type: Api
+          Properties:
+            Path: /productos
+            Method: get
