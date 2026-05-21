@@ -4,40 +4,26 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import com.pos.repository.VentaRepository;
+import com.pos.validator.VentaValidator;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
-import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.time.Instant;
 
 public class CrearVentaHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private static final DynamoDbClient dynamoDb = crearClienteDynamoDb();
     private static final Gson gson = new Gson();
+    private final VentaValidator validator;
+    private final VentaRepository repository;
 
-    private static DynamoDbClient crearClienteDynamoDb() {
-        String modoLocal = System.getProperty("IS_LOCAL", System.getenv("IS_LOCAL"));
-        if ("true".equals(modoLocal)) {
-            System.out.println("[CrearVentaHandler] Modo LOCAL -> http://localhost:8000");
-            return DynamoDbClient.builder()
-                    .endpointOverride(URI.create("http://localhost:8000"))
-                    .region(Region.US_EAST_1)
-                    .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create("dummy", "dummy")))
-                    .build();
-        }
-        System.out.println("[CrearVentaHandler] Modo NUBE -> AWS DynamoDB real");
-        return DynamoDbClient.builder().region(Region.US_EAST_1).build();
+    public CrearVentaHandler() {
+        this.validator = new VentaValidator();
+        this.repository = new VentaRepository();
     }
 
     @Override
@@ -56,12 +42,11 @@ public class CrearVentaHandler implements RequestHandler<APIGatewayProxyRequestE
 
             Map<String, Object> ventaMap = gson.fromJson(body, new TypeToken<Map<String, Object>>(){}.getType());
 
+            // 1. Validator
+            validator.validarVenta(ventaMap);
+
             String ventaId = UUID.randomUUID().toString();
             String fechaActual = Instant.now().toString();
-
-            if (!ventaMap.containsKey("total")) {
-                return crearRespuesta(400, headers, "{\"error\": \"Falta el campo total en la venta\"}");
-            }
 
             Map<String, AttributeValue> itemValues = new HashMap<>();
             itemValues.put("ventaId", AttributeValue.builder().s(ventaId).build());
@@ -75,15 +60,19 @@ public class CrearVentaHandler implements RequestHandler<APIGatewayProxyRequestE
                 itemValues.put("cajero", AttributeValue.builder().s(String.valueOf(ventaMap.get("cajero"))).build());
             }
 
-            dynamoDb.putItem(PutItemRequest.builder().tableName("ventas").item(itemValues).build());
+            // 2. Repository
+            repository.guardarVenta(itemValues);
             context.getLogger().log("Venta guardada con ID: " + ventaId);
 
             return crearRespuesta(201, headers, String.format(
                 "{\"mensaje\":\"Venta guardada exitosamente\",\"ventaId\":\"%s\",\"fecha\":\"%s\"}",
                 ventaId, fechaActual));
 
+        } catch (IllegalArgumentException e) {
+            context.getLogger().log("Error de validacion: " + e.getMessage());
+            return crearRespuesta(400, headers, "{\"error\":\"" + e.getMessage() + "\"}");
         } catch (Exception e) {
-            context.getLogger().log("Error: " + e.getMessage());
+            context.getLogger().log("Error interno: " + e.getMessage());
             return crearRespuesta(500, headers, "{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
