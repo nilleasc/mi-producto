@@ -56,17 +56,12 @@ public class CrearVentaHandler implements RequestHandler<APIGatewayProxyRequestE
             String ventaId = UUID.randomUUID().toString();
             String fechaActual = Instant.now().toString();
 
+            Map<String, Object> datosMap = new HashMap<>(ventaMap);
+            datosMap.put("fecha", fechaActual);
+
             Map<String, AttributeValue> itemValues = new HashMap<>();
             itemValues.put("ventaId", AttributeValue.builder().s(ventaId).build());
-            itemValues.put("fecha", AttributeValue.builder().s(fechaActual).build());
-            itemValues.put("total", AttributeValue.builder().n(String.valueOf(ventaMap.get("total"))).build());
-
-            if (ventaMap.containsKey("items")) {
-                itemValues.put("items", AttributeValue.builder().s(gson.toJson(ventaMap.get("items"))).build());
-            }
-            if (ventaMap.containsKey("cajero")) {
-                itemValues.put("cajero", AttributeValue.builder().s(String.valueOf(ventaMap.get("cajero"))).build());
-            }
+            itemValues.put("datos", AttributeValue.builder().s(gson.toJson(datosMap)).build());
 
             // 2. Repository
             repository.guardarVenta(itemValues);

@@ -22,5 +22,9 @@ public class VentaValidator {
         if (!ventaMap.containsKey("items")) {
             throw new IllegalArgumentException("Falta el campo 'items' en la venta.");
         }
+
+        if (!ventaMap.containsKey("subtotal") || !ventaMap.containsKey("iva") || !ventaMap.containsKey("descuento")) {
+            throw new IllegalArgumentException("Faltan campos matemáticos obligatorios (subtotal, iva, descuento).");
+        }
     }
 }

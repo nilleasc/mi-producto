@@ -41,7 +41,12 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "  Total ventas: $($result.Count)" -ForegroundColor Green
     if ($result.Count -gt 0) {
         foreach ($item in $result.Items) {
-            Write-Host "  - ID: $($item.ventaId.S) | Total: $($item.total.N) | Cajero: $($item.cajero.S) | Fecha: $($item.fecha.S)" -ForegroundColor White
+            if ($item.datos.S) {
+                $datosObj = $item.datos.S | ConvertFrom-Json
+                Write-Host "  - ID: $($item.ventaId.S) | Total: $($datosObj.total) | Cajero: $($datosObj.cajero) | Fecha: $($datosObj.fecha)" -ForegroundColor White
+            } else {
+                Write-Host "  - ID: $($item.ventaId.S) | Total: $($item.total.N) | Cajero: $($item.cajero.S) | Fecha: $($item.fecha.S)" -ForegroundColor White
+            }
         }
     } else {
         Write-Host "  (Sin ventas aun)" -ForegroundColor DarkGray

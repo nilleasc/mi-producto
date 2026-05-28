@@ -86,6 +86,9 @@ export const CartPanel: React.FC = () => {
     // Format payload for backend
     const payload = {
       total: total,
+      subtotal: subtotal,
+      descuento: discountAmount,
+      iva: tax,
       cajero: sellerId || 'cajero_1',
       items: cart.items.map(item => ({
         id: item.productId,
