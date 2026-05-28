@@ -1,0 +1,16 @@
+com\pos\LocalApiServer$VentasHttpHandler.class
+com\pos\TestLocal$1.class
+com\pos\handlers\CrearVentaHandler.class
+com\pos\handlers\CrearVentaHandler$1.class
+com\pos\LoadData.class
+com\pos\repository\IVentaRepository.class
+com\pos\LocalApiServer$ProductosHttpHandler.class
+com\pos\LoadData$1.class
+com\pos\LocalApiServer.class
+com\pos\config\DynamoDbConfig.class
+com\pos\TestLocal$MockLogger.class
+com\pos\repository\ProductoRepository.class
+com\pos\repository\VentaRepository.class
+com\pos\validator\VentaValidator.class
+com\pos\handlers\ObtenerProductosHandler.class
+com\pos\TestLocal.class

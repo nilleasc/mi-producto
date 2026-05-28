@@ -30,3 +30,34 @@ body {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* ========================================================
+   Estilos de Impresión para Facturas (Tickets)
+   ======================================================== */
+@media print {
+  /* Ocultar todo por defecto en la página */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar solo el contenido del recibo y sus descendientes */
+  #receipt-content, #receipt-content * {
+    visibility: visible;
+  }
+  
+  /* Posicionar el recibo en la esquina superior izquierda */
+  #receipt-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ajustar los márgenes de página y el tamaño para impresora de tickets (80mm) */
+  @page {
+    margin: 0;
+    size: 80mm auto; 
+  }
+}

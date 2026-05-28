@@ -4,6 +4,7 @@ import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { useSalesStore } from '../../../adapters/state/salesStore';
 import { useUsersStore } from '../../../adapters/state/usersStore';
 import { apiClient } from '../../../infrastructure/http/apiClient';
+import { ReceiptPreview, SaleData } from '../ReceiptPreview/ReceiptPreview';
 
 export const CartPanel: React.FC = () => {
   const { carts, activeCartId, actions } = useCartStore();
@@ -16,6 +17,7 @@ export const CartPanel: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedSale, setCompletedSale] = useState<SaleData | null>(null);
 
   const VALID_COUPONS: Record<string, number> = {
     'DESC10': 0.10,
@@ -109,32 +111,42 @@ export const CartPanel: React.FC = () => {
       });
 
       // 2. Save the sale locally (for offline history)
-      addSale({
+      const newSale: SaleData = {
         id: Math.random().toString(36).substr(2, 9),
         date: new Date().toISOString(),
         buyerId: buyerId || 'Consumidor Final',
         sellerId: sellerId,
-        items: [...cart.items],
+        items: cart.items.map(i => ({
+          productId: i.productId,
+          productName: i.productName,
+          quantity: i.quantity,
+          unitPrice: (i.unitPrice as any)?.amount || 0
+        })),
         subtotal,
         discount: discountAmount,
         tax,
         total,
         cashReceived: Number(cashReceived)
-      });
+      };
+      
+      addSale(newSale);
 
-      alert(`¡Venta Exitosa!\nTotal: ${formatCOP(total)}\nCliente: ${buyerId || 'Consumidor Final'}\nVendedor: ${sellerId}\n\n✅ Guardada en DynamoDB Local.`);
-
-      actions.clearCart();
-      setShowCheckout(false);
-      setBuyerId('');
-      setCashReceived('');
-      handleRemoveCoupon();
+      setCompletedSale(newSale);
     } catch (error) {
       alert("❌ Error al guardar la venta en el backend.");
       console.error(error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseReceipt = () => {
+    actions.clearCart();
+    setShowCheckout(false);
+    setBuyerId('');
+    setCashReceived('');
+    handleRemoveCoupon();
+    setCompletedSale(null);
   };
 
   const change = Number(cashReceived) - total;
@@ -332,6 +344,14 @@ export const CartPanel: React.FC = () => {
             ) : 'CONFIRMAR VENTA'}
           </button>
         </div>
+      )}
+
+      {/* --- Factura/Ticket --- */}
+      {completedSale && (
+        <ReceiptPreview 
+          sale={completedSale} 
+          onClose={handleCloseReceipt} 
+        />
       )}
     </div>
   );

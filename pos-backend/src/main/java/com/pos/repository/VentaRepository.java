@@ -7,7 +7,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.util.Map;
 
-public class VentaRepository {
+public class VentaRepository implements IVentaRepository {
 
     private final DynamoDbClient dynamoDb;
 

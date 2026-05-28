@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.pos.repository.IVentaRepository;
 import com.pos.repository.VentaRepository;
 import com.pos.validator.VentaValidator;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -19,11 +20,18 @@ public class CrearVentaHandler implements RequestHandler<APIGatewayProxyRequestE
 
     private static final Gson gson = new Gson();
     private final VentaValidator validator;
-    private final VentaRepository repository;
+    private final IVentaRepository repository;
 
+    /** Constructor por defecto usado por AWS Lambda */
     public CrearVentaHandler() {
         this.validator = new VentaValidator();
         this.repository = new VentaRepository();
+    }
+
+    /** Constructor para inyeccion de dependencias (usado en tests) */
+    CrearVentaHandler(VentaValidator validator, IVentaRepository repository) {
+        this.validator = validator;
+        this.repository = repository;
     }
 
     @Override

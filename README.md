@@ -85,3 +85,34 @@ Sigue el asistente indicando el nombre de la pila (ej. `pos-supermarket-stack`) 
 
 ---
 *Desarrollado para la entrega final de Arquitectura de Software y Sistemas Distribuidos.*
+
+---
+
+## 📐 Proceso SDD (Spec-Driven Development)
+
+El desarrollo de este backend se rigió rigurosamente bajo el enfoque **Spec-Driven Development (SDD)**, estructurando el trabajo en las siguientes fases consecutivas:
+
+1. **Definición de Especificaciones (.kiro/specs/):** Antes de programar, se establecieron en la carpeta `.kiro/specs/pos-api/` los requisitos funcionales (`requirements.md`), decisiones de diseño (`design.md`) y el backlog técnico secuencial (`tasks.md`).
+2. **Implementación Guiada por Tareas:** Cada componente del código (desde los Value Objects y el Validator, hasta los Handlers de AWS Lambda y la configuración en `template.yml`) se implementó siguiendo en orden estricto el backlog de tareas de especificación ya aprobado.
+3. **Validación y Pruebas:** Los criterios de aceptación especificados previamente en `requirements.md` sirvieron de base directa para escribir las pruebas unitarias mockeadas con JUnit 5 y Mockito, garantizando cobertura ante respuestas exitosas, validaciones y errores de infraestructura.
+
+Esta disciplina previno errores de diseño y permitió modularizar el backend en una arquitectura hexagonal limpia y 100% trazable a la documentación.
+
+---
+
+## 🧪 Pruebas Unitarias
+
+Se cuenta con cobertura de pruebas unitarias robustas que aíslan la capa de datos de DynamoDB utilizando Mockito. Las pruebas cubren escenarios de respuesta exitosa (201), validaciones de campos requeridos (400) y excepciones de infraestructura simulando fallas en DynamoDB (500).
+
+`[Arrastra tu captura de la terminal corriendo 'mvn test' exitosamente aquí o reemplaza esta línea con: ![Unit Tests](screenshots/unit_tests.png)]`
+
+---
+
+## 🌐 URL Base de API Gateway Desplegada
+
+Una vez desplegada en AWS mediante SAM, el API Gateway expone la siguiente ruta base en la nube:
+
+*   **URL Base API:** `https://<api-id>.execute-api.<region>.amazonaws.com/Prod`
+    *   `GET /productos` - Obtiene la lista de productos
+    *   `POST /ventas` - Registra una venta
+
