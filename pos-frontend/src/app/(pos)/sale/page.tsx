@@ -7,7 +7,7 @@ import { useCartStore } from '../../../adapters/state/cartStore';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { Product } from '../../../core/entities/Product';
 import { useBarcodeScanner } from '../../../features/pos/BarcodeScanner/useBarcodeScanner';
-import { ScannerSimulator } from '../../../features/pos/BarcodeScanner/ScannerSimulator';
+
 
 // ─── Definición de atajos ────────────────────────────────────────────────────
 const CASHIER_SHORTCUTS = [
@@ -239,7 +239,7 @@ export default function SalePage() {
       </div>
 
       {/* ── Simulador flotante para pruebas sin hardware físico ── */}
-      <ScannerSimulator />
+
 
       {/* ── Overlay de Láser para escaneo exitoso ── */}
       {isScanningLaser && (
