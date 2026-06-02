@@ -153,6 +153,12 @@ public class SaleService {
             throw new InsufficientStockException("Insufficient stock at checkout", outOfStock);
         }
 
+        // Apply discount if provided
+        if (request.getDiscount() != null) {
+            sale.setDiscount(request.getDiscount());
+            sale.calculateTotals();
+        }
+
         // Payment validation
         if (request.getPaymentType() == PaymentType.CASH) {
             if (request.getAmountReceived() == null || request.getAmountReceived().compareTo(sale.getTotal()) < 0) {

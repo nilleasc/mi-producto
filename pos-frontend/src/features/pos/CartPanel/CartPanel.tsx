@@ -111,7 +111,8 @@ export const CartPanel: React.FC = () => {
       // 3. Finalizar Venta (Checkout)
       await apiClient.post(`/api/sales/${saleId}/checkout`, {
         paymentType: 'CASH',
-        amountReceived: Number(cashReceived)
+        amountReceived: Number(cashReceived),
+        discount: discountAmount > 0 ? discountAmount : undefined
       });
       
       // 1. Deduct stock from global inventory

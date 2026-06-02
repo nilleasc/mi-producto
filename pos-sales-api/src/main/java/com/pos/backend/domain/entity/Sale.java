@@ -87,9 +87,14 @@ public class Sale {
                 .filter(lt -> lt != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal taxRate = new BigDecimal("0.19");
-        this.tax = subtotal.multiply(taxRate);
         if (discount == null) discount = BigDecimal.ZERO;
-        this.total = subtotal.add(tax).subtract(discount);
+        BigDecimal taxableAmount = subtotal.subtract(discount);
+        if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) {
+            taxableAmount = BigDecimal.ZERO;
+        }
+
+        BigDecimal taxRate = new BigDecimal("0.19");
+        this.tax = taxableAmount.multiply(taxRate);
+        this.total = taxableAmount.add(tax);
     }
 }

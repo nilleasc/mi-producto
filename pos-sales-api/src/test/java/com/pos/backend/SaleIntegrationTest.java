@@ -78,7 +78,7 @@ class SaleIntegrationTest {
         // Checkout CASH
         CheckoutRequest checkoutReq = CheckoutRequest.builder()
                 .paymentType(PaymentType.CASH)
-                .amountReceived(new BigDecimal("50.00")).build();
+                .amountReceived(new BigDecimal("20000.00")).build();
         ResponseEntity<Sale> checkoutResp = restTemplate.postForEntity(
                 baseUrl + "/sales/" + saleId + "/checkout", checkoutReq, Sale.class);
         assertEquals(HttpStatus.OK, checkoutResp.getStatusCode());
@@ -156,7 +156,7 @@ class SaleIntegrationTest {
         // Now checkout
         CheckoutRequest checkoutReq = CheckoutRequest.builder()
                 .paymentType(PaymentType.CASH)
-                .amountReceived(new BigDecimal("50.00")).build();
+                .amountReceived(new BigDecimal("10000.00")).build();
         ResponseEntity<Sale> checkoutResp = restTemplate.postForEntity(
                 baseUrl + "/sales/" + saleId + "/checkout", checkoutReq, Sale.class);
         assertEquals(SaleStatus.COMPLETED, checkoutResp.getBody().getStatus());
@@ -213,7 +213,7 @@ class SaleIntegrationTest {
 
         CheckoutRequest checkoutReq = CheckoutRequest.builder()
                 .paymentType(PaymentType.CASH)
-                .amountReceived(new BigDecimal("100.00")).build();
+                .amountReceived(new BigDecimal("30000.00")).build();
         restTemplate.postForEntity(baseUrl + "/sales/" + saleId + "/checkout", checkoutReq, Sale.class);
 
         // Verify stock decreased

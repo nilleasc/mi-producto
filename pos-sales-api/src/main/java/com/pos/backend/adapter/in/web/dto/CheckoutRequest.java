@@ -18,4 +18,6 @@ public class CheckoutRequest {
     private PaymentType paymentType;
 
     private BigDecimal amountReceived; // required for CASH
+
+    private BigDecimal discount; // optional coupon discount applied in frontend
 }
