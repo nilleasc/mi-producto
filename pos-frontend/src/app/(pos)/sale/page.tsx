@@ -146,19 +146,6 @@ export default function SalePage() {
           POS
         </div>
 
-        {/* Indicador de Lector de Barras Físico Activo */}
-        <div className="flex flex-col items-center gap-1 mt-2 group cursor-help" title="Lector de código de barras activo. Puedes escanear sin dar clic a ningún campo de texto.">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/50 flex flex-col items-center justify-center text-emerald-400 relative transition-all duration-300 hover:border-emerald-500/40">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0a8 8 0 11-16 0 8 8 0 0116 0z" />
-            </svg>
-            <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-          </div>
-          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none mt-1">Lector</span>
-        </div>
 
         {/* Botón de atajos en el sidebar */}
         <button

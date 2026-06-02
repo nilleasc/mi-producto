@@ -76,17 +76,14 @@ A continuación se demuestra el funcionamiento de los flujos principales solicit
 ### 1. Listado de productos cargado desde el API (`GET /productos`)
 *(El sistema carga asincrónicamente el catálogo usando la API remota)*
 
-> **[ESTUDIANTE: Pega la imagen aquí reemplazando el texto. Borra este mensaje]**
-> ![Listado de productos cargado](ruta/a/tu/foto1.png)
+> ![Listado de productos cargado](docs/images/foto1.png)
 
 ### 2. Registro exitoso de una venta (`POST /ventas`) con respuesta del API visible
 *(Flujo de selección de productos, cálculo de totales, envío mediante POST y notificación de éxito)*
 
-> **[ESTUDIANTE: Pega la imagen aquí reemplazando el texto. Borra este mensaje]**
-> ![Registro exitoso de una venta](ruta/a/tu/foto2.png)
+> ![Registro exitoso de una venta](docs/images/foto2.png)
 
 ### 3. Manejo de un error (API caído o respuesta inválida)
 *(El sistema intercepta la excepción `try/catch` y notifica amigablemente al usuario)*
 
-> **[ESTUDIANTE: Pega la imagen aquí reemplazando el texto. Borra este mensaje]**
-> ![Manejo de error API](ruta/a/tu/foto3.png)
+> ![Manejo de error API](docs/images/foto3.png)
