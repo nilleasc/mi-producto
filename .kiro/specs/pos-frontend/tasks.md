@@ -6,14 +6,14 @@ Este plan implementa un frontend POS en Next.js 14+ con App Router siguiendo arq
 
 ## Tareas
 
-- [ ] 1. Configuración inicial del proyecto Next.js
+- [x] 1. Configuración inicial del proyecto Next.js
   - Crear proyecto Next.js 14+ con App Router y TypeScript strict
   - Instalar dependencias: Tailwind CSS, React Hook Form, Zod, TanStack Query, Vitest, Testing Library, fast-check
   - Configurar Vitest con soporte para React y TypeScript
   - Crear estructura de carpetas según arquitectura hexagonal (domain, application, adapters/in, adapters/out, infrastructure)
   - _Requerimientos: 6.9_
 
-- [ ] 2. Implementar capa de dominio - Tipos y modelos
+- [-] 2. Implementar capa de dominio - Tipos y modelos
   - [ ] 2.1 Crear tipos del carrito (Cart.ts)
     - Definir interfaces TypeScript para CartItem, Cart, CartState
     - Incluir todos los campos: productoId, nombreProducto, precioOficial, cantidad, precioOverride, autorizadoPor, precioAplicado, subtotal, errorCodigo
