@@ -35,12 +35,12 @@ async function reporteVentas() {
       }
       
       console.log(`-----------------------------------------`);
-      console.log(` SUBTOTAL:      $${sale.subTotal || 0}`);
-      console.log(` IVA (19%):     $${sale.taxAmount || 0}`);
+      console.log(` SUBTOTAL:      $${sale.subtotal || 0}`);
+      console.log(` IVA (19%):     $${sale.tax || 0}`);
       console.log(` TOTAL:         $${sale.total || 0}`);
       console.log(`-----------------------------------------`);
-      console.log(` MÉTODO PAGO:   ${sale.paymentMethod || 'EFECTIVO'}`);
-      console.log(` EFECTIVO REC.: $${sale.cashReceived || 0}`);
+      console.log(` MÉTODO PAGO:   ${sale.paymentType || 'EFECTIVO'}`);
+      console.log(` EFECTIVO REC.: $${sale.amountReceived || 0}`);
       console.log(` CAMBIO:        $${sale.changeAmount || 0}`);
       console.log(`=========================================\n`);
     });
