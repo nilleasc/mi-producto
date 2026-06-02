@@ -1,4 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.pos.validator.VentaValidatorTest
 -------------------------------------------------------------------------------
+<<<<<<< HEAD
 Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.pos.validator.VentaValidatorTest
+=======
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.pos.validator.VentaValidatorTest
+>>>>>>> f1e36cb0c4a7c8c1d781464c77d337f158853e9f

@@ -84,8 +84,48 @@ sam deploy --guided
 Sigue el asistente indicando el nombre de la pila (ej. `pos-supermarket-stack`) y la región de AWS (ej. `us-east-1`). El sistema leerá la plantilla `infraestructura/template.yml`, aprovisionará las tablas DynamoDB automáticamente, configurará el API Gateway y subirá la función Lambda compilada a la nube.
 
 ---
+
+## 🚀 Cómo Arrancar el Proyecto Localmente (Windows)
+
+Para ejecutar todo el ecosistema (Base de Datos Local, Backend API y Frontend React), debes abrir **terminales de PowerShell independientes** y ejecutar los siguientes comandos en orden:
+
+### 1️⃣ Terminal 1: Base de Datos (DynamoDB Local)
+Inicializa el motor NoSQL en memoria (puerto `8000`):
+```powershell
+cd pos-backend\scripts
+powershell -ExecutionPolicy Bypass -File .\1-iniciar-dynamodb-local.ps1
+```
+*👉 Mantén esta terminal abierta.*
+
+### 2️⃣ Terminal 2: Crear Tablas e Inventario Semilla
+Genera las tablas `ventas` y `productos` y carga los datos de prueba en la base de datos local:
+```powershell
+cd pos-backend\scripts
+powershell -ExecutionPolicy Bypass -File .\2-crear-tablas.ps1
+```
+*👉 Este script creará las tablas y finalizará solo. Puedes cerrar la terminal al terminar.*
+
+### 3️⃣ Terminal 3: Servidor Backend (API en Puerto 3000)
+Compila el proyecto Java y expone los endpoints HTTP locales para el frontend:
+```powershell
+cd pos-backend\scripts
+powershell -ExecutionPolicy Bypass -File .\5-iniciar-api-local.ps1
+```
+*👉 Mantén esta terminal abierta.*
+
+### 4️⃣ Terminal 4: Terminal POS (Frontend React en Puerto 5173)
+Levanta la interfaz web de cajero (Vite + React) donde opera el escáner global y el simulador interactivo:
+```bash
+cd pos-frontend
+npm install
+npm run dev
+```
+*👉 Abre en tu navegador **`http://localhost:5173`**.*
+
+---
 *Desarrollado para la entrega final de Arquitectura de Software y Sistemas Distribuidos.*
 
+<<<<<<< HEAD
 ---
 
 ## 📐 Proceso SDD (Spec-Driven Development)
@@ -116,3 +156,5 @@ Una vez desplegada en AWS mediante SAM, el API Gateway expone la siguiente ruta 
     *   `GET /productos` - Obtiene la lista de productos
     *   `POST /ventas` - Registra una venta
 
+=======
+>>>>>>> f1e36cb0c4a7c8c1d781464c77d337f158853e9f

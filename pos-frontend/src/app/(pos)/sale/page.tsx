@@ -6,6 +6,8 @@ import { CartPanel } from '../../../features/pos/CartPanel/CartPanel';
 import { useCartStore } from '../../../adapters/state/cartStore';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { Product } from '../../../core/entities/Product';
+import { useBarcodeScanner } from '../../../features/pos/BarcodeScanner/useBarcodeScanner';
+import { ScannerSimulator } from '../../../features/pos/BarcodeScanner/ScannerSimulator';
 
 // ─── Definición de atajos ────────────────────────────────────────────────────
 const CASHIER_SHORTCUTS = [
@@ -21,6 +23,8 @@ const CASHIER_SHORTCUTS = [
 export default function SalePage() {
   const { actions, carts, activeCartId } = useCartStore();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [isScanningLaser, setIsScanningLaser] = useState(false);
+  const [scanToast, setScanToast] = useState<{ show: boolean; productName: string } | null>(null);
   const shortcutBtnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +90,7 @@ export default function SalePage() {
   const handleAddToCart = (product: Product, quantity: number) => {
     const state = useCartStore.getState();
     const cart = state.carts[state.activeCartId || 'default'];
-    const existingItem = cart?.items?.find((i) => i.productId === product.id);
+    const existingItem = cart?.items?.find((i: any) => i.productId === product.id);
     const currentQty = existingItem ? existingItem.quantity : 0;
 
     if (currentQty + quantity <= product.stock) {
@@ -96,13 +100,64 @@ export default function SalePage() {
     }
   };
 
+  const { products } = useInventoryStore();
+
+  const handleGlobalBarcodeScan = (barcode: string) => {
+    // Search both standard sku and clean comparisons
+    const product = products.find((p) => String(p.sku).trim() === barcode.trim());
+    if (product) {
+      if (product.stock > 0) {
+        const state = useCartStore.getState();
+        const cart = state.carts[state.activeCartId || 'default'];
+        const existingItem = cart?.items?.find((i: any) => i.productId === product.id);
+        const currentQty = existingItem ? existingItem.quantity : 0;
+
+        if (currentQty + 1 <= product.stock) {
+          actions.addItem(product, 1);
+          
+          // Triggers for visual effects
+          setIsScanningLaser(true);
+          setScanToast({ show: true, productName: product.name });
+          
+          // Clear visual effects
+          setTimeout(() => setIsScanningLaser(false), 600);
+          setTimeout(() => setScanToast(null), 2500);
+        } else {
+          alert(`¡No puedes agregar más! Solo hay ${product.stock} unidades de ${product.name} en stock.`);
+        }
+      } else {
+        alert(`¡El producto ${product.name} está agotado (stock: 0)!`);
+      }
+    } else {
+      alert(`Código de barras "${barcode}" no encontrado en el catálogo.`);
+    }
+  };
+
+  useBarcodeScanner({
+    onScan: handleGlobalBarcodeScan,
+  });
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
 
       {/* ── Sidebar ── */}
       <div className="w-20 bg-gray-800 text-white flex flex-col items-center py-4 gap-4 relative">
-        <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-xl">
+        <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">
           POS
+        </div>
+
+        {/* Indicador de Lector de Barras Físico Activo */}
+        <div className="flex flex-col items-center gap-1 mt-2 group cursor-help" title="Lector de código de barras activo. Puedes escanear sin dar clic a ningún campo de texto.">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/50 flex flex-col items-center justify-center text-emerald-400 relative transition-all duration-300 hover:border-emerald-500/40">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0a8 8 0 11-16 0 8 8 0 0116 0z" />
+            </svg>
+            <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </div>
+          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none mt-1">Lector</span>
         </div>
 
         {/* Botón de atajos en el sidebar */}
@@ -182,6 +237,44 @@ export default function SalePage() {
           <CartPanel />
         </div>
       </div>
+
+      {/* ── Simulador flotante para pruebas sin hardware físico ── */}
+      <ScannerSimulator />
+
+      {/* ── Overlay de Láser para escaneo exitoso ── */}
+      {isScanningLaser && (
+        <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+          <div className="absolute inset-0 bg-emerald-500/10 transition-all duration-150"></div>
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-400 shadow-[0_0_15px_#10b981,0_0_30px_#10b981] animate-laser-sweep"></div>
+        </div>
+      )}
+
+      {/* ── Notificación de escaneo exitoso (Toast) ── */}
+      {scanToast && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[9999] animate-bounce pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/40 px-6 py-4 rounded-full shadow-[0_15px_30px_rgba(16,185,129,0.2)] flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-slate-900">
+              ✓
+            </div>
+            <div className="text-sm font-semibold text-white tracking-wide">
+              Escaneado: <span className="text-emerald-400 font-black">{scanToast.productName}</span> (+1)
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Estilos dinámicos para la animación del láser */}
+      <style>{`
+        @keyframes laserSweep {
+          0% { transform: translateY(0vh); opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 1; }
+          100% { transform: translateY(100vh); opacity: 0; }
+        }
+        .animate-laser-sweep {
+          animation: laserSweep 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+      `}</style>
     </div>
   );
 }
