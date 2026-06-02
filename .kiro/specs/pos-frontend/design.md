@@ -1,10 +1,10 @@
 # POS Frontend Design
 
 ## Architecture
-- **Framework:** Next.js / React (SPA).
+- **Framework:** React con Vite. **Justificación:** Se eligió React debido a su arquitectura basada en componentes funcionales y Hooks, lo cual permite un ciclo de vida predecible y actualizaciones rápidas del DOM (Virtual DOM) ideales para la alta interactividad que requiere una terminal de punto de venta (POS). Además, el uso de Vite como empaquetador garantiza tiempos de compilación y recarga en caliente instantáneos en desarrollo.
+- **State Management:** Zustand. **Justificación:** A diferencia de Context API o Redux, Zustand permite una gestión de estado global extremadamente ligera y sin re-renderizados innecesarios, lo cual es crítico para mantener la fluidez al actualizar el carrito de compras a cada instante.
 - **Language:** Strict TypeScript.
 - **Architecture Pattern:** Arquitectura Hexagonal (Ports and Adapters).
-- **State Management:** Zustand (acting as State Adapters).
 - **Styling:** Tailwind CSS.
 
 ## Directory Structure
