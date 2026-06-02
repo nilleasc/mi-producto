@@ -40,6 +40,11 @@ export const CartPanel: React.FC = () => {
     setCouponError('');
   };
 
+  // Limpiar el carrito siempre que se ingrese a esta pantalla (requerimiento)
+  useEffect(() => {
+    actions.clearCart();
+  }, []); // Se ejecuta una sola vez al montar
+
   // Escuchar atajos de teclado globales de la pantalla cajero
   useEffect(() => {
     const onClear = () => actions.clearCart();
@@ -54,7 +59,9 @@ export const CartPanel: React.FC = () => {
     };
   }, [actions, cart]);
   const [buyerId, setBuyerId] = useState('');
-  const [sellerId, setSellerId] = useState('cajero_1');
+  // Usar el nombre del primer cajero activo como valor por defecto
+  const activeCashiers = useUsersStore.getState().cashiers.filter(c => c.isActive);
+  const [sellerId, setSellerId] = useState(activeCashiers.length > 0 ? activeCashiers[0].name : '');
   const [cashReceived, setCashReceived] = useState('');
 
   if (!cart) return <div className="p-8 text-center glass rounded-2xl">Cargando carrito...</div>;
@@ -82,25 +89,30 @@ export const CartPanel: React.FC = () => {
 
   const handleFinishSale = async () => {
     setIsSubmitting(true);
-    
-    // Format payload for backend
-    const payload = {
-      total: total,
-      subtotal: subtotal,
-      descuento: discountAmount,
-      iva: tax,
-      cajero: sellerId || 'cajero_1',
-      items: cart.items.map(item => ({
-        id: item.productId,
-        nombre: item.productName,
-        cantidad: item.quantity,
-        precio: (item.unitPrice as any)?.amount || 0
-      }))
-    };
 
     try {
-      // Send to Java Backend
-      await apiClient.post('/ventas', payload);
+      // 1. Crear Venta
+      const saleResponse = await apiClient.post('/api/sales', {
+        terminalId: 'TERM-001',
+        cashierId: sellerId || 'cajero_1',
+        customerId: buyerId || ''
+      });
+      
+      const saleId = saleResponse.id;
+
+      // 2. Agregar Ítems
+      for (const item of cart.items) {
+        await apiClient.post(`/api/sales/${saleId}/items`, {
+          productId: item.productId,
+          quantity: item.quantity
+        });
+      }
+
+      // 3. Finalizar Venta (Checkout)
+      await apiClient.post(`/api/sales/${saleId}/checkout`, {
+        paymentType: 'CASH',
+        amountReceived: Number(cashReceived)
+      });
       
       // 1. Deduct stock from global inventory
       cart.items.forEach(item => {
@@ -135,9 +147,10 @@ export const CartPanel: React.FC = () => {
       addSale(newSale);
 
       setCompletedSale(newSale);
-    } catch (error) {
-      alert("❌ Error al guardar la venta en el backend.");
-      console.error(error);
+    } catch (error: any) {
+      const msg = error?.message || 'Error desconocido';
+      alert(`❌ Error al guardar la venta: ${msg}`);
+      console.error('Detalle del error:', error);
     } finally {
       setIsSubmitting(false);
     }

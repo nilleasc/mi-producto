@@ -34,14 +34,34 @@ public class Sale {
     @Builder.Default
     private List<SaleItem> items = new ArrayList<>();
 
+    @Column(precision = 19, scale = 2)
     private BigDecimal subtotal;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal tax;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal discount;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal total;
 
-    private String paymentType; // CASH, CREDIT
-    private String paymentReference;
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType;
 
+    private String paymentReference;
+    private String transactionId;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal amountReceived;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal changeAmount;
+
+    @Column(length = 255)
+    private String cancellationReason;
+
+    private LocalDateTime frozenAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -50,21 +70,25 @@ public class Sale {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (status == null) status = SaleStatus.ACTIVE;
-        calculateTotals();
+        if (subtotal == null) subtotal = BigDecimal.ZERO;
+        if (tax == null) tax = BigDecimal.ZERO;
+        if (discount == null) discount = BigDecimal.ZERO;
+        if (total == null) total = BigDecimal.ZERO;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        calculateTotals();
     }
 
     public void calculateTotals() {
         this.subtotal = items.stream()
                 .map(SaleItem::getLineTotal)
+                .filter(lt -> lt != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        this.tax = subtotal.multiply(new BigDecimal("0.19"));
+
+        BigDecimal taxRate = new BigDecimal("0.19");
+        this.tax = subtotal.multiply(taxRate);
         if (discount == null) discount = BigDecimal.ZERO;
         this.total = subtotal.add(tax).subtract(discount);
     }

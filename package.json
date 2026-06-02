@@ -1,0 +1,11 @@
+{
+  "name": "supermarket-pos-root",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"start-api.cmd\" \"wait-on tcp:127.0.0.1:8088 --timeout 120000 && npm run dev --prefix pos-frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.3"
+  }
+}

@@ -31,17 +31,17 @@ export const useInventoryStore = create<InventoryState>()(
         set({ isLoading: true, error: null });
         try {
           const { apiClient } = await import('../../infrastructure/http/apiClient');
-          const data = await apiClient.get('/productos');
-          // Mapear los datos de DynamoDB al modelo del frontend
+          const data = await apiClient.get('/api/products');
+          // Mapear los datos de Spring Boot al modelo del frontend
           const mappedProducts = data.map((item: any) => ({
-            id: item.productoId || item.id,
-            sku: item.sku,
-            name: item.nombre || item.name,
-            price: { amount: Number(item.precio || item.price?.amount), currency: item.moneda || 'COP' },
+            id: item.id,
+            sku: item.sku || item.barcode || 'N/A',
+            name: item.name,
+            price: { amount: Number(item.price), currency: 'COP' },
             stock: Number(item.stock),
-            categoryId: item.categoria || item.categoryId,
+            categoryId: item.categoryId || 'c1',
             variants: [],
-            isActive: item.activo !== false,
+            isActive: item.active !== false,
             imageUrl: null,
             unitOfMeasure: 'UND'
           }));
@@ -59,6 +59,6 @@ export const useInventoryStore = create<InventoryState>()(
         products: state.products.filter(p => p.id !== id)
       })),
     }),
-    { name: 'pos-inventory-v1' }
+    { name: 'pos-inventory-v3' }
   )
 );

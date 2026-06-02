@@ -1,0 +1,14 @@
+com\pos\backend\application\service\SaleServiceTest$AddItemTests.class
+com\pos\backend\domain\valueobject\MoneyTest.class
+com\pos\backend\SaleIntegrationTest.class
+com\pos\backend\application\service\SaleServiceTest$CreateSaleTests.class
+com\pos\backend\application\service\SaleServiceTest$CheckoutTests.class
+com\pos\backend\application\service\SaleServiceTest$ReturnTests.class
+com\pos\backend\application\service\CustomerServiceTest.class
+com\pos\backend\infrastructure\scheduler\FrozenSaleExpirySchedulerTest.class
+com\pos\backend\application\service\SaleServiceTest$AssociateCustomerTests.class
+com\pos\backend\application\service\SaleServiceTest$FreezeResumeTests.class
+com\pos\backend\application\service\SaleServiceTest$CancelTests.class
+com\pos\backend\application\service\SaleServiceTest.class
+com\pos\backend\application\service\ReceiptServiceTest.class
+com\pos\backend\application\service\SaleServiceTest$UpdateRemoveItemTests.class

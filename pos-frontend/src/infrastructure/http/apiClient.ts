@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:3000';
+export const API_BASE_URL = ''; // Uses Vite proxy → /api/* → http://127.0.0.1:8088/api/*
 
 export const apiClient = {
   get: async (endpoint: string) => {

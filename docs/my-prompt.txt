@@ -1,3 +1,4 @@
+
 Please act as Kiro and design a comprehensive Spring Boot REST API for a Supermarket Point of Sale (POS) system. This Sales API will manage the entire transaction lifecycle at the checkout terminal.
 
 Context & Dependencies:

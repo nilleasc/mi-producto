@@ -35,7 +35,7 @@ export const useCartStore = create<CartState>()(
           if (!state.activeCartId) return state;
           const cart = state.carts[state.activeCartId] || createEmptyCart(state.activeCartId);
           const existingItemIndex = cart.items ? cart.items.findIndex(item => item.productId === product.id) : -1;
-          
+
           let newItems = cart.items ? [...cart.items] : [];
           if (existingItemIndex >= 0) {
             const existing = newItems[existingItemIndex];
@@ -55,7 +55,7 @@ export const useCartStore = create<CartState>()(
               discounts: []
             });
           }
-          
+
           return {
             carts: {
               ...state.carts,
@@ -97,7 +97,7 @@ export const useCartStore = create<CartState>()(
               ...state.carts,
               [state.activeCartId]: {
                 ...cart,
-                items: cart.items.map(item => 
+                items: cart.items.map(item =>
                   item.productId === productId ? { ...item, quantity } : item
                 )
               }
@@ -115,8 +115,8 @@ export const useCartStore = create<CartState>()(
         }),
       },
     }),
-    { 
-      name: 'pos-cart-v3',
+    {
+      name: 'pos-cart-v4',
       partialize: (state) => Object.fromEntries(
         Object.entries(state).filter(([key]) => key !== 'actions')
       ),

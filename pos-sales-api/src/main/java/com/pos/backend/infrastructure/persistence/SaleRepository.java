@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, String> {
     List<Sale> findByTerminalIdAndStatus(String terminalId, SaleStatus status);
+    List<Sale> findByStatus(SaleStatus status);
 }
