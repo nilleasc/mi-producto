@@ -3,12 +3,15 @@ import { persist } from 'zustand/middleware';
 import { Product } from '../core/entities/Product';
 
 const INITIAL_PRODUCTS: Product[] = [
-  { id: '1', sku: 'SKU001' as any, name: 'Café Espresso', price: { amount: 4500, currency: 'COP' } as any, stock: 50, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
-  { id: '2', sku: 'SKU002' as any, name: 'Café Latte Grande', price: { amount: 8900, currency: 'COP' } as any, stock: 12, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
-  { id: '3', sku: 'SKU003' as any, name: 'Croissant de Mantequilla', price: { amount: 5500, currency: 'COP' } as any, stock: 8, categoryId: 'c2', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
-  { id: '4', sku: '123456789' as any, name: 'Agua Manantial 500ml', price: { amount: 3200, currency: 'COP' } as any, stock: 100, categoryId: 'c3', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
-  { id: '5', sku: 'SKU005' as any, name: 'Empanada de Carne', price: { amount: 2800, currency: 'COP' } as any, stock: 20, categoryId: 'c2', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
-  { id: '6', sku: 'SKU006' as any, name: 'Jugo de Naranja Natural', price: { amount: 7500, currency: 'COP' } as any, stock: 15, categoryId: 'c3', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' }
+  { id: '1', sku: 'PAN001' as any, name: 'Pan de Masa Madre', price: { amount: 12000, currency: 'COP' } as any, stock: 15, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '2', sku: 'TEA001' as any, name: 'Té Chai Artesanal', price: { amount: 9500, currency: 'COP' } as any, stock: 40, categoryId: 'c2', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '3', sku: 'TAR001' as any, name: 'Tarta de Zanahoria', price: { amount: 8000, currency: 'COP' } as any, stock: 8, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '4', sku: 'GAL001' as any, name: 'Galleta de Avena y Miel', price: { amount: 4500, currency: 'COP' } as any, stock: 25, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '5', sku: 'KOM001' as any, name: 'Kombucha Frutos Rojos', price: { amount: 11000, currency: 'COP' } as any, stock: 12, categoryId: 'c2', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '6', sku: 'SAN001' as any, name: 'Sándwich Caprese', price: { amount: 15000, currency: 'COP' } as any, stock: 10, categoryId: 'c3', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '7', sku: 'ACA001' as any, name: 'Tazón de Acai', price: { amount: 18000, currency: 'COP' } as any, stock: 5, categoryId: 'c3', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '8', sku: 'MUF001' as any, name: 'Muffin de Arándanos', price: { amount: 6000, currency: 'COP' } as any, stock: 18, categoryId: 'c1', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' },
+  { id: '9', sku: 'KAF001' as any, name: 'Café Moka Especial', price: { amount: 10500, currency: 'COP' } as any, stock: 50, categoryId: 'c2', variants: [], isActive: true, imageUrl: null, unitOfMeasure: 'UND' }
 ];
 
 interface InventoryState {
@@ -59,6 +62,6 @@ export const useInventoryStore = create<InventoryState>()(
         products: state.products.filter(p => p.id !== id)
       })),
     }),
-    { name: 'pos-inventory-v3' }
+    { name: 'pos-inventory-v4' }
   )
 );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ProductGrid } from '../../../features/pos/ProductGrid/ProductGrid';
 import { CartPanel } from '../../../features/pos/CartPanel/CartPanel';
 import { useCartStore } from '../../../adapters/state/cartStore';
@@ -8,83 +8,40 @@ import { useInventoryStore } from '../../../adapters/state/inventoryStore';
 import { Product } from '../../../core/entities/Product';
 import { useBarcodeScanner } from '../../../features/pos/BarcodeScanner/useBarcodeScanner';
 
-
-// ─── Definición de atajos ────────────────────────────────────────────────────
 const CASHIER_SHORTCUTS = [
   { key: 'F2', description: 'Enfocar buscador' },
   { key: 'F3', description: 'Vaciar carrito' },
-  { key: 'F4', description: 'Cobrar / pagar' },
-  { key: 'Esc', description: 'Cancelar / cerrar modal' },
+  { key: 'F4', description: 'Cobrar' },
+  { key: 'Esc', description: 'Cancelar / cerrar' },
   { key: '↑ ↓', description: 'Navegar sugerencias' },
-  { key: 'Tab', description: 'Seleccionar primera sugerencia' },
+  { key: 'Tab', description: 'Primera sugerencia' },
   { key: '↵', description: 'Confirmar selección' },
 ];
 
 export default function SalePage() {
-  const { actions, carts, activeCartId } = useCartStore();
+  const { actions } = useCartStore();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [isScanningLaser, setIsScanningLaser] = useState(false);
   const [scanToast, setScanToast] = useState<{ show: boolean; productName: string } | null>(null);
-  const shortcutBtnRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  // ─── Cargar catálogo desde la API ──────────────────────────────────────
   useEffect(() => {
     useInventoryStore.getState().fetchProducts();
   }, []);
 
-  // ─── Acciones desde el carrito para disparar desde atajos ───────────────
-  // Necesitamos acceso a la función cobrar del CartPanel; la coordinamos
-  // con un evento de ventana personalizado.
   const fireCheckout = () => window.dispatchEvent(new CustomEvent('pos:checkout'));
   const fireClearCart = () => window.dispatchEvent(new CustomEvent('pos:clearCart'));
 
-  // ─── Atajos globales de la pantalla de cajero ────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // No activar atajos si el foco está en un input normal (excepto el de búsqueda)
       const tag = (e.target as HTMLElement).tagName;
       const isSearchInput = (e.target as HTMLElement).id === 'product-search-input';
-
-      if (e.key === 'F2') {
-        e.preventDefault();
-        document.getElementById('product-search-input')?.focus();
-        return;
-      }
-
-      // F3 y F4 no se disparan si hay un input de texto activo que no sea la búsqueda
+      if (e.key === 'F2') { e.preventDefault(); document.getElementById('product-search-input')?.focus(); return; }
       if ((tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') && !isSearchInput) return;
-
-      if (e.key === 'F3') {
-        e.preventDefault();
-        fireClearCart();
-        return;
-      }
-
-      if (e.key === 'F4') {
-        e.preventDefault();
-        fireCheckout();
-        return;
-      }
+      if (e.key === 'F3') { e.preventDefault(); fireClearCart(); return; }
+      if (e.key === 'F4') { e.preventDefault(); fireCheckout(); return; }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // ─── Cerrar panel al hacer clic fuera ───────────────────────────────────
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        !shortcutBtnRef.current?.contains(e.target as Node)
-      ) {
-        setShortcutsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleAddToCart = (product: Product, quantity: number) => {
@@ -92,18 +49,16 @@ export default function SalePage() {
     const cart = state.carts[state.activeCartId || 'default'];
     const existingItem = cart?.items?.find((i: any) => i.productId === product.id);
     const currentQty = existingItem ? existingItem.quantity : 0;
-
     if (currentQty + quantity <= product.stock) {
       actions.addItem(product, quantity);
     } else {
-      alert(`¡No puedes agregar más! Solo hay ${product.stock} unidades de ${product.name} en stock.`);
+      alert(`¡Solo hay ${product.stock} unidades de ${product.name} en stock.`);
     }
   };
 
   const { products } = useInventoryStore();
 
   const handleGlobalBarcodeScan = (barcode: string) => {
-    // Search both standard sku and clean comparisons
     const product = products.find((p) => String(p.sku).trim() === barcode.trim());
     if (product) {
       if (product.stock > 0) {
@@ -111,156 +66,134 @@ export default function SalePage() {
         const cart = state.carts[state.activeCartId || 'default'];
         const existingItem = cart?.items?.find((i: any) => i.productId === product.id);
         const currentQty = existingItem ? existingItem.quantity : 0;
-
         if (currentQty + 1 <= product.stock) {
           actions.addItem(product, 1);
-          
-          // Triggers for visual effects
           setIsScanningLaser(true);
           setScanToast({ show: true, productName: product.name });
-          
-          // Clear visual effects
           setTimeout(() => setIsScanningLaser(false), 600);
           setTimeout(() => setScanToast(null), 2500);
         } else {
-          alert(`¡No puedes agregar más! Solo hay ${product.stock} unidades de ${product.name} en stock.`);
+          alert(`¡Solo hay ${product.stock} unidades de ${product.name} en stock.`);
         }
       } else {
-        alert(`¡El producto ${product.name} está agotado (stock: 0)!`);
+        alert(`${product.name} está agotado.`);
       }
     } else {
-      alert(`Código de barras "${barcode}" no encontrado en el catálogo.`);
+      alert(`Código "${barcode}" no encontrado.`);
     }
   };
 
-  useBarcodeScanner({
-    onScan: handleGlobalBarcodeScan,
-  });
+  useBarcodeScanner({ onScan: handleGlobalBarcodeScan });
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-full w-full overflow-hidden" style={{ background: '#f1f5f9' }}>
 
-      {/* ── Sidebar ── */}
-      <div className="w-20 bg-gray-800 text-white flex flex-col items-center py-4 gap-4 relative">
-        <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">
+      {/* ══════════════════════════════════════════════
+          SIDEBAR FIJO — top bar horizontal de marca
+      ══════════════════════════════════════════════ */}
+      {/* Ahora el sidebar es una franja izquierda fija, no flotante */}
+      <aside className="w-[72px] flex flex-col items-center py-5 gap-5 flex-shrink-0 bg-white border-r border-slate-100 shadow-[1px_0_0_#f1f5f9]">
+        {/* Logo */}
+        <div className="w-10 h-10 bg-orange-600 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-md shadow-orange-200 select-none">
           POS
         </div>
 
+        <div className="w-8 h-px bg-slate-100" />
 
-        {/* Botón de atajos en el sidebar */}
-        <button
-          ref={shortcutBtnRef}
-          onClick={() => setShortcutsOpen((o) => !o)}
-          title="Atajos de teclado"
-          className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer mt-auto mb-4
-            ${shortcutsOpen ? 'bg-blue-500 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-300'}`}
-          aria-label="Atajos de teclado"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span className="text-[8px] font-bold uppercase tracking-wide leading-none">Teclas</span>
-        </button>
-
-        {/* Panel desplegable de atajos — sale hacia la derecha del sidebar */}
-        {shortcutsOpen && (
-          <div
-            ref={panelRef}
-            className="absolute left-20 bottom-4 z-50 w-72 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden"
+        {/* Botón Teclas */}
+        <div className="relative w-full flex flex-col items-center">
+          <button
+            onClick={() => setShortcutsOpen((o) => !o)}
+            title="Atajos de teclado"
+            className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer
+              ${shortcutsOpen
+                ? 'bg-orange-600 text-white shadow-md shadow-orange-200'
+                : 'hover:bg-slate-50 text-slate-400 hover:text-slate-600'}`}
+            aria-label="Atajos de teclado"
           >
-            {/* Cabecera */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <span className="text-white text-sm font-semibold">Atajos de teclado</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="text-[7px] font-black uppercase tracking-widest leading-none">Teclas</span>
+          </button>
+
+          {/* Panel de atajos — sale hacia la derecha del sidebar */}
+          {shortcutsOpen && (
+            <div className="absolute left-[68px] top-0 z-50 w-64 bg-white rounded-2xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-slate-800 text-sm font-bold">Atajos de teclado</span>
+                </div>
               </div>
-              <button
-                onClick={() => setShortcutsOpen(false)}
-                className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
-                aria-label="Cerrar"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <ul className="py-2">
+                {CASHIER_SHORTCUTS.map((s, i) => (
+                  <li key={i} className="flex items-center justify-between px-5 py-2.5 hover:bg-slate-50 transition-colors">
+                    <span className="text-slate-600 text-xs font-medium">{s.description}</span>
+                    <kbd className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-mono text-orange-600 shadow-sm">{s.key}</kbd>
+                  </li>
+                ))}
+              </ul>
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-100">
+                <p className="text-slate-400 text-[10px] text-center">
+                  <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-slate-500 font-mono text-[9px] shadow-sm">F2</kbd>{' '}
+                  para enfocar el buscador en cualquier momento
+                </p>
+              </div>
             </div>
+          )}
+        </div>
+      </aside>
 
-            {/* Lista de atajos */}
-            <ul className="py-2">
-              {CASHIER_SHORTCUTS.map((s, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-800 transition-colors"
-                >
-                  <span className="text-gray-300 text-sm">{s.description}</span>
-                  <kbd className="px-2 py-1 bg-gray-700 border border-gray-600 rounded-lg text-[11px] font-mono text-gray-200 tracking-wide shadow-sm">
-                    {s.key}
-                  </kbd>
-                </li>
-              ))}
-            </ul>
+      {/* ══════════════════════════════════════════════
+          ÁREA PRINCIPAL
+      ══════════════════════════════════════════════ */}
+      <div className="flex flex-1 gap-4 p-4 overflow-hidden">
 
-            {/* Pie */}
-            <div className="px-4 py-3 bg-gray-800 border-t border-gray-700">
-              <p className="text-gray-500 text-[10px] text-center">
-                Presiona <kbd className="px-1 bg-gray-700 border border-gray-600 rounded text-gray-300 font-mono">F2</kbd> en cualquier momento para buscar
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Área principal ── */}
-      <div className="flex-1 flex p-6 gap-6">
-        {/* Izquierda: Buscador + Grid */}
-        <div className="flex-1 overflow-hidden">
+        {/* Zona central: buscador + catálogo */}
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
           <ProductGrid onAddToCart={handleAddToCart} />
         </div>
 
-        {/* Derecha: Carrito */}
-        <div className="w-96 flex-shrink-0">
+        {/* Panel derecho: carrito */}
+        <div className="w-[380px] flex-shrink-0 overflow-hidden">
           <CartPanel />
         </div>
       </div>
 
-      {/* ── Simulador flotante para pruebas sin hardware físico ── */}
-
-
-      {/* ── Overlay de Láser para escaneo exitoso ── */}
+      {/* Overlay Láser */}
       {isScanningLaser && (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-          <div className="absolute inset-0 bg-emerald-500/10 transition-all duration-150"></div>
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-400 shadow-[0_0_15px_#10b981,0_0_30px_#10b981] animate-laser-sweep"></div>
+          <div className="absolute inset-0 bg-emerald-500/8" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_20px_#10b981,0_0_40px_#10b981] animate-laser-sweep" />
         </div>
       )}
 
-      {/* ── Notificación de escaneo exitoso (Toast) ── */}
+      {/* Toast de escaneo */}
       {scanToast && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[9999] animate-bounce pointer-events-none">
-          <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/40 px-6 py-4 rounded-full shadow-[0_15px_30px_rgba(16,185,129,0.2)] flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-slate-900">
-              ✓
-            </div>
-            <div className="text-sm font-semibold text-white tracking-wide">
-              Escaneado: <span className="text-emerald-400 font-black">{scanToast.productName}</span> (+1)
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+          <div className="bg-white border border-emerald-100 px-5 py-3.5 rounded-2xl shadow-[0_12px_40px_-8px_rgba(16,185,129,0.2)] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-sm font-bold shadow-md shadow-emerald-200">✓</div>
+            <div className="text-sm font-semibold text-slate-800">
+              Escaneado: <span className="text-emerald-600 font-black">{scanToast.productName}</span>
+              <span className="ml-2 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">+1</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Estilos dinámicos para la animación del láser */}
       <style>{`
         @keyframes laserSweep {
-          0% { transform: translateY(0vh); opacity: 0; }
+          0% { transform: translateY(0); opacity: 0; }
           15% { opacity: 1; }
           85% { opacity: 1; }
           100% { transform: translateY(100vh); opacity: 0; }
         }
-        .animate-laser-sweep {
-          animation: laserSweep 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
+        .animate-laser-sweep { animation: laserSweep 0.6s ease forwards; }
       `}</style>
     </div>
   );

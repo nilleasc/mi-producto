@@ -75,29 +75,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center bg-gray-900 relative overflow-hidden">
-      {/* Fondo decorativo */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600 opacity-20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-400 opacity-10 rounded-full blur-3xl" />
-      </div>
-
-      {/* Card de login */}
-      <div className="relative z-10 w-full max-w-sm mx-4">
+    <main className="min-h-screen w-full flex items-center justify-center bg-stone-50 relative overflow-hidden font-sans">
+      {/* Card de login ultra limpia */}
+      <div className="relative z-10 w-full max-w-sm mx-4 bg-white rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.06)] p-8 sm:p-10 animate-slide-up">
 
         {/* Logo / Header */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-500/30 mb-4">
-            POS
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-20 h-20 bg-orange-600 rounded-full flex items-center justify-center text-white font-black text-4xl shadow-sm mb-6 transform hover:scale-105 transition-transform">
+            P
           </div>
-          <h1 className="text-white text-2xl font-semibold tracking-tight">Bienvenido</h1>
-          <p className="text-gray-400 text-sm mt-1">Ingresa tus credenciales para continuar</p>
+          <h1 className="text-stone-900 text-3xl font-bold tracking-tight">Bienvenido</h1>
+          <p className="text-stone-500 text-sm mt-2 font-medium">Ingresa tus credenciales para continuar</p>
         </div>
 
         {/* Formulario */}
         <form
           onSubmit={handleSubmit}
-          className="bg-gray-800 border border-gray-700 rounded-2xl p-8 shadow-2xl space-y-5"
+          className="glass-panel rounded-3xl p-8 space-y-6"
         >
           {/* Cabecera del formulario con botón de atajos */}
           <div className="flex items-center justify-between mb-1">
@@ -187,11 +181,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           {/* Campo: Usuario */}
           <div className="space-y-1.5">
-            <label htmlFor="login-username" className="text-gray-300 text-sm font-medium block text-left">
-              Usuario
-            </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
+                <label htmlFor="login-username" className="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-2 ml-1">
+                  Usuario
+                </label>
+              <span className="absolute inset-y-0 left-4 flex items-center mt-7 text-stone-400">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -204,18 +198,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 placeholder="user1"
                 required
                 autoComplete="username"
-                className="w-full bg-gray-900 text-white placeholder-gray-600 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 border border-transparent rounded-full py-3.5 pl-12 pr-4 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
               />
             </div>
           </div>
 
           {/* Campo: Contraseña */}
           <div className="space-y-1.5">
-            <label htmlFor="login-password" className="text-gray-300 text-sm font-medium block text-left">
-              Contraseña
-            </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
+                <label htmlFor="login-password" className="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-2 ml-1">
+                  Contraseña
+                </label>
+              <span className="absolute inset-y-0 left-4 flex items-center mt-7 text-stone-400">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -228,12 +222,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 placeholder="••••••"
                 required
                 autoComplete="current-password"
-                className="w-full bg-gray-900 text-white placeholder-gray-600 border border-gray-700 rounded-xl py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 border border-transparent rounded-full py-3.5 pl-12 pr-12 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
+                className="absolute inset-y-0 right-3 flex items-center mt-7 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
                 tabIndex={-1}
                 aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
@@ -266,11 +260,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 mt-2 cursor-pointer"
+            className="w-full bg-orange-600 hover:bg-orange-500 disabled:bg-stone-300 text-white font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_-6px_rgba(234,88,12,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(234,88,12,0.6)] mt-8 cursor-pointer"
           >
             {loading ? (
               <>
-                <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -279,7 +273,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             ) : (
               <>
                 Iniciar sesión
-                <kbd className="ml-1 px-1.5 py-0.5 bg-blue-400/30 rounded text-[10px] font-mono">↵</kbd>
+                <kbd className="ml-2 px-2 py-0.5 bg-white/20 rounded-md text-[10px] font-mono shadow-sm">↵</kbd>
               </>
             )}
           </button>

@@ -9,8 +9,10 @@ export interface Cashier {
 }
 
 const INITIAL_CASHIERS: Cashier[] = [
-  { id: '1', cedula: '1000000001', name: 'Sebastian', isActive: true },
-  { id: '2', cedula: '1000000002', name: 'María', isActive: true }
+  { id: '1', cedula: '1010101010', name: 'Nicolle', isActive: true },
+  { id: '2', cedula: '2020202020', name: 'Alejandra', isActive: true },
+  { id: '3', cedula: '3030303030', name: 'Carlos', isActive: true },
+  { id: '4', cedula: '4040404040', name: 'Valentina', isActive: true }
 ];
 
 interface UsersState {
@@ -32,6 +34,6 @@ export const useUsersStore = create<UsersState>()(
         cashiers: state.cashiers.filter(c => c.id !== id)
       })),
     }),
-    { name: 'pos-users-v1' }
+    { name: 'pos-users-v2' }
   )
 );

@@ -33,11 +33,15 @@ public class DataLoader {
     private void loadProducts() {
         if (productRepository.count() == 0) {
             productRepository.saveAll(Arrays.asList(
-                Product.builder().sku("SKU001").barcode("7701001").name("Café Espresso").price(new BigDecimal("4500.00")).stock(50).categoryId("c1").isActive(true).build(),
-                Product.builder().sku("SKU002").barcode("7701002").name("Latte").price(new BigDecimal("8900.00")).stock(30).categoryId("c1").isActive(true).build(),
-                Product.builder().sku("SKU003").barcode("7701003").name("Croissant").price(new BigDecimal("5500.00")).stock(2).categoryId("c2").isActive(true).build(),
-                Product.builder().sku("SKU004").barcode("7701004").name("Agua Mineral").price(new BigDecimal("3200.00")).stock(100).categoryId("c3").isActive(true).build(),
-                Product.builder().sku("SKU005").barcode("7701005").name("Pan Integral").price(new BigDecimal("6000.00")).stock(40).categoryId("c2").isActive(true).build()
+                Product.builder().sku("PAN001").barcode("7701001").name("Pan de Masa Madre").price(new BigDecimal("12000.00")).stock(15).categoryId("c1").isActive(true).build(),
+                Product.builder().sku("TEA001").barcode("7701002").name("Té Chai Artesanal").price(new BigDecimal("9500.00")).stock(40).categoryId("c2").isActive(true).build(),
+                Product.builder().sku("TAR001").barcode("7701003").name("Tarta de Zanahoria").price(new BigDecimal("8000.00")).stock(8).categoryId("c1").isActive(true).build(),
+                Product.builder().sku("GAL001").barcode("7701004").name("Galleta de Avena y Miel").price(new BigDecimal("4500.00")).stock(25).categoryId("c1").isActive(true).build(),
+                Product.builder().sku("KOM001").barcode("7701005").name("Kombucha Frutos Rojos").price(new BigDecimal("11000.00")).stock(12).categoryId("c2").isActive(true).build(),
+                Product.builder().sku("SAN001").barcode("7701006").name("Sándwich Caprese").price(new BigDecimal("15000.00")).stock(10).categoryId("c3").isActive(true).build(),
+                Product.builder().sku("ACA001").barcode("7701007").name("Tazón de Acai").price(new BigDecimal("18000.00")).stock(5).categoryId("c3").isActive(true).build(),
+                Product.builder().sku("MUF001").barcode("7701008").name("Muffin de Arándanos").price(new BigDecimal("6000.00")).stock(18).categoryId("c1").isActive(true).build(),
+                Product.builder().sku("KAF001").barcode("7701009").name("Café Moka Especial").price(new BigDecimal("10500.00")).stock(50).categoryId("c2").isActive(true).build()
             ));
             log.info("Loaded {} sample products", productRepository.count());
         }

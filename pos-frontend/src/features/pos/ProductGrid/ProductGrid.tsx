@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ProductSearch } from './ProductSearch';
 import { ProductCard } from './ProductCard';
 import { Product } from '../../../core/entities/Product';
 import { useInventoryStore } from '../../../adapters/state/inventoryStore';
-
-const normalize = (str: string) =>
-  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 interface ProductGridProps {
   onAddToCart: (product: Product, quantity: number) => void;
@@ -16,63 +13,67 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ onAddToCart }) => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = (query: string) => {
-    if (!query.trim()) {
-      setFilteredProducts([]);
-      setHasSearched(false);
-      return;
-    }
-    const q = normalize(query);
-    const results = products.filter(
-      (p) =>
-        normalize(p.name).includes(q) ||
-        normalize(String(p.sku)).includes(q),
-    );
-    setFilteredProducts(results);
+  // Recibe resultados directamente del backend (o fallback local)
+  const handleSearch = (query: string, results?: Product[]) => {
+    if (!query.trim()) { setFilteredProducts([]); setHasSearched(false); return; }
+    setFilteredProducts(results || []);
     setHasSearched(true);
   };
 
   const handleBarcodeScan = (barcode: string) => {
     const product = products.find((p) => (p.sku as unknown as string) === barcode);
-    if (product && product.stock > 0) {
-      onAddToCart(product, 1);
-    }
+    if (product && product.stock > 0) onAddToCart(product, 1);
   };
 
-  // Selección directa desde el autocomplete → agrega al carrito inmediatamente
   const handleSelectSuggestion = (product: Product) => {
-    if (product.stock > 0) {
-      onAddToCart(product, 1);
-    }
-    // Actualiza el grid también para mostrar el producto seleccionado
+    if (product.stock > 0) onAddToCart(product, 1);
     setFilteredProducts([product]);
     setHasSearched(true);
   };
 
   return (
-    <div className="flex flex-col gap-6 h-full">
-      <ProductSearch
-        onSearch={handleSearch}
-        onBarcodeScan={handleBarcodeScan}
-        products={products}
-        onSelectSuggestion={handleSelectSuggestion}
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto pb-20">
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAdd={(p) => onAddToCart(p, 1)}
-          />
-        ))}
-        {!hasSearched && (
-          <div className="col-span-full text-center text-gray-500 py-10">
-            Ingresa el nombre o código del producto para buscar.
+    <div className="flex flex-col h-full gap-3">
+      {/* Buscador: tarjeta blanca flotante */}
+      <div className="flex-shrink-0">
+        <ProductSearch
+          onSearch={handleSearch}
+          onBarcodeScan={handleBarcodeScan}
+          products={products}
+          onSelectSuggestion={handleSelectSuggestion}
+        />
+      </div>
+
+      {/* Grid de productos directamente sobre el fondo */}
+      <div className="flex-1 overflow-y-auto">
+        {!hasSearched ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-500">Busca un producto</p>
+              <p className="text-xs text-slate-400 mt-0.5">Nombre, código SKU o escanea con el lector</p>
+            </div>
           </div>
-        )}
-        {hasSearched && filteredProducts.length === 0 && (
-          <div className="col-span-full text-center text-gray-500 py-10">
-            No se encontraron productos.
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-500">Sin resultados</p>
+              <p className="text-xs text-slate-400 mt-0.5">Intenta con otro término</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-4">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onAdd={(p) => onAddToCart(p, 1)} />
+            ))}
           </div>
         )}
       </div>

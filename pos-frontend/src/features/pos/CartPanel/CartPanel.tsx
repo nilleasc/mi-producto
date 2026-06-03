@@ -19,357 +19,359 @@ export const CartPanel: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedSale, setCompletedSale] = useState<SaleData | null>(null);
 
-  const VALID_COUPONS: Record<string, number> = {
-    'DESC10': 0.10,
-  };
+  const VALID_COUPONS: Record<string, number> = { 'DESC10': 0.10 };
 
   const handleApplyCoupon = () => {
     const code = couponCode.trim().toUpperCase();
-    if (VALID_COUPONS[code] !== undefined) {
-      setAppliedCoupon({ code, discount: VALID_COUPONS[code] });
-      setCouponError('');
-    } else {
-      setAppliedCoupon(null);
-      setCouponError('Cupón inválido. Intenta con DESC10.');
-    }
+    if (VALID_COUPONS[code] !== undefined) { setAppliedCoupon({ code, discount: VALID_COUPONS[code] }); setCouponError(''); }
+    else { setAppliedCoupon(null); setCouponError('Cupón inválido. Intenta con DESC10.'); }
   };
 
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponError('');
-  };
+  const handleRemoveCoupon = () => { setAppliedCoupon(null); setCouponCode(''); setCouponError(''); };
 
-  // Limpiar el carrito siempre que se ingrese a esta pantalla (requerimiento)
-  useEffect(() => {
-    actions.clearCart();
-  }, []); // Se ejecuta una sola vez al montar
+  useEffect(() => { actions.clearCart(); }, []);
 
-  // Escuchar atajos de teclado globales de la pantalla cajero
   useEffect(() => {
     const onClear = () => actions.clearCart();
-    const onCheckout = () => {
-      if (cart && cart.items.length > 0) setShowCheckout(true);
-    };
+    const onCheckout = () => { if (cart && cart.items.length > 0) setShowCheckout(true); };
     window.addEventListener('pos:clearCart', onClear);
     window.addEventListener('pos:checkout', onCheckout);
-    return () => {
-      window.removeEventListener('pos:clearCart', onClear);
-      window.removeEventListener('pos:checkout', onCheckout);
-    };
+    return () => { window.removeEventListener('pos:clearCart', onClear); window.removeEventListener('pos:checkout', onCheckout); };
   }, [actions, cart]);
+
   const [buyerId, setBuyerId] = useState('');
-  // Usar el nombre del primer cajero activo como valor por defecto
   const activeCashiers = useUsersStore.getState().cashiers.filter(c => c.isActive);
   const [sellerId, setSellerId] = useState(activeCashiers.length > 0 ? activeCashiers[0].name : '');
   const [cashReceived, setCashReceived] = useState('');
 
-  if (!cart) return <div className="p-8 text-center glass rounded-2xl">Cargando carrito...</div>;
+  if (!cart) return <div className="p-8 text-center text-slate-400 text-sm">Cargando...</div>;
 
   const handleIncrement = (productId: string, currentQuantity: number) => {
     const product = products.find(p => p.id === productId);
-    if (product && currentQuantity + 1 <= product.stock) {
-      actions.updateQuantity(productId, currentQuantity + 1);
-    } else if (product) {
-      alert(`¡No puedes agregar más! Solo hay ${product.stock} unidades disponibles.`);
-    }
+    if (product && currentQuantity + 1 <= product.stock) actions.updateQuantity(productId, currentQuantity + 1);
+    else if (product) alert(`Solo hay ${product.stock} unidades disponibles.`);
   };
 
   const subtotal = cart.items.reduce((sum, item) => sum + (((item.unitPrice as any)?.amount || 0) * item.quantity), 0);
   const discountAmount = appliedCoupon ? Math.round(subtotal * appliedCoupon.discount) : 0;
   const subtotalAfterDiscount = subtotal - discountAmount;
-  const tax = Math.round(subtotalAfterDiscount * 0.19); // 19% IVA Colombia
+  const tax = Math.round(subtotalAfterDiscount * 0.19);
   const total = subtotalAfterDiscount + tax;
 
-  const formatCOP = (val: number) => new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(val);
+  const formatCOP = (val: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
 
   const handleFinishSale = async () => {
     setIsSubmitting(true);
-
     try {
-      // 1. Crear Venta
-      const saleResponse = await apiClient.post('/api/sales', {
-        terminalId: 'TERM-001',
-        cashierId: sellerId || 'cajero_1',
-        customerId: buyerId || ''
-      });
-      
+      const saleResponse = await apiClient.post('/api/sales', { terminalId: 'TERM-001', cashierId: sellerId || 'cajero_1', customerId: buyerId || '' });
       const saleId = saleResponse.id;
-
-      // 2. Agregar Ítems
       for (const item of cart.items) {
-        await apiClient.post(`/api/sales/${saleId}/items`, {
-          productId: item.productId,
-          quantity: item.quantity
-        });
+        await apiClient.post(`/api/sales/${saleId}/items`, { productId: item.productId, quantity: item.quantity });
       }
-
-      // 3. Finalizar Venta (Checkout)
-      await apiClient.post(`/api/sales/${saleId}/checkout`, {
-        paymentType: 'CASH',
-        amountReceived: Number(cashReceived),
-        discount: discountAmount > 0 ? discountAmount : undefined
-      });
-      
-      // 1. Deduct stock from global inventory
+      await apiClient.post(`/api/sales/${saleId}/checkout`, { paymentType: 'CASH', amountReceived: Number(cashReceived), discount: discountAmount > 0 ? discountAmount : undefined });
       cart.items.forEach(item => {
         const product = products.find(p => p.id === item.productId);
-        if (product) {
-          useInventoryStore.getState().updateProduct({
-            ...product,
-            stock: product.stock - item.quantity
-          });
-        }
+        if (product) useInventoryStore.getState().updateProduct({ ...product, stock: product.stock - item.quantity });
       });
-
-      // 2. Save the sale locally (for offline history)
       const newSale: SaleData = {
-        id: Math.random().toString(36).substr(2, 9),
-        date: new Date().toISOString(),
-        buyerId: buyerId || 'Consumidor Final',
-        sellerId: sellerId,
-        items: cart.items.map(i => ({
-          productId: i.productId,
-          productName: i.productName,
-          quantity: i.quantity,
-          unitPrice: (i.unitPrice as any)?.amount || 0
-        })),
-        subtotal,
-        discount: discountAmount,
-        tax,
-        total,
-        cashReceived: Number(cashReceived)
+        id: Math.random().toString(36).substr(2, 9), date: new Date().toISOString(),
+        buyerId: buyerId || 'Consumidor Final', sellerId,
+        items: cart.items.map(i => ({ productId: i.productId, productName: i.productName, quantity: i.quantity, unitPrice: (i.unitPrice as any)?.amount || 0 })),
+        subtotal, discount: discountAmount, tax, total, cashReceived: Number(cashReceived),
       };
-      
       addSale(newSale);
-
       setCompletedSale(newSale);
     } catch (error: any) {
-      const msg = error?.message || 'Error desconocido';
-      alert(`❌ Error al guardar la venta: ${msg}`);
-      console.error('Detalle del error:', error);
+      alert(`❌ Error: ${error?.message || 'Error desconocido'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCloseReceipt = () => {
-    actions.clearCart();
-    setShowCheckout(false);
-    setBuyerId('');
-    setCashReceived('');
-    handleRemoveCoupon();
-    setCompletedSale(null);
+    actions.clearCart(); setShowCheckout(false); setBuyerId(''); setCashReceived(''); handleRemoveCoupon(); setCompletedSale(null);
   };
 
   const change = Number(cashReceived) - total;
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200 relative">
-      <div className="bg-gray-900 text-white p-6 flex justify-between items-center">
-        <div>
-          <h2 className="font-black text-xl tracking-tight">Carrito</h2>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Terminal #001</p>
-        </div>
-        <button 
-          onClick={() => actions.clearCart()} 
-          className="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-        >
-          Vaciar
-        </button>
-      </div>
+    <div className="flex flex-col h-full overflow-hidden relative">
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-gray-50">
-        {cart.items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-400">
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      {/* ═══ Cabecera con gradiente ═══ */}
+      <div className="flex-shrink-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white px-5 pt-5 pb-4 rounded-t-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
               </svg>
             </div>
-            <p className="font-bold text-sm text-gray-500">El carrito está vacío</p>
-          </div>
-        ) : (
-          cart.items.map(item => (
-            <div key={item.id} className="flex justify-between items-center group bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex-1">
-                <h4 className="font-bold text-gray-900 text-sm">{item.productName}</h4>
-                <div className="text-gray-500 font-medium text-xs">{formatCOP((item.unitPrice as any)?.amount || 0)} c/u</div>
-              </div>
-              <div className="flex items-center gap-3 bg-gray-100 p-1 rounded-full">
-                <button 
-                  className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all font-bold text-gray-700"
-                  onClick={() => actions.updateQuantity(item.productId, item.quantity - 1)}
-                >-</button>
-                <span className="w-4 text-center font-black text-xs text-gray-900">{item.quantity}</span>
-                <button 
-                  className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all font-bold text-gray-700"
-                  onClick={() => handleIncrement(item.productId, item.quantity)}
-                >+</button>
-              </div>
-              <div className="w-20 text-right font-black text-sm text-gray-900 ml-2">
-                {formatCOP(((item.unitPrice as any)?.amount || 0) * item.quantity)}
-              </div>
+            <div>
+              <h2 className="font-black text-base tracking-tight leading-none">Carrito de Compras</h2>
+              <p className="text-[10px] text-orange-400 uppercase tracking-widest font-bold mt-0.5">Terminal #001</p>
             </div>
-          ))
+          </div>
+          <button
+            onClick={() => actions.clearCart()}
+            title="Vaciar carrito (F3)"
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-500/80 text-white/60 hover:text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+        {/* Contador de ítems */}
+        {cart.items.length > 0 && (
+          <div className="flex items-center gap-2 mt-1">
+            <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-orange-400 rounded-full transition-all duration-500" style={{ width: `${Math.min(cart.items.length * 15, 100)}%` }} />
+            </div>
+            <span className="text-[10px] text-white/50 font-bold">{cart.items.length} {cart.items.length === 1 ? 'ítem' : 'ítems'}</span>
+          </div>
         )}
       </div>
 
-      <div className="bg-white p-6 border-t border-gray-200">
-
-        {/* --- Campo de Cupón --- */}
-        <div className="mb-4">
-          {appliedCoupon ? (
-            <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-xl px-4 py-2">
-              <div className="flex items-center gap-2">
-                <span className="text-green-600 font-bold text-sm">🎟️ {appliedCoupon.code}</span>
-                <span className="text-green-700 text-xs font-medium">−{(appliedCoupon.discount * 100).toFixed(0)}% aplicado</span>
+      {/* ═══ Lista de ítems ═══ */}
+      <div className="flex-1 overflow-y-auto bg-white min-h-0">
+        {cart.items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 py-10">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
               </div>
-              <button onClick={handleRemoveCoupon} className="text-xs text-red-500 font-bold hover:underline">Quitar</button>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
+                <span className="text-orange-500 text-sm">0</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-slate-500">Tu carrito está vacío</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Busca productos y agrégalos para comenzar</p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            {cart.items.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-orange-50/30 transition-colors group">
+                {/* Numerador */}
+                <span className="text-[10px] font-bold text-slate-300 w-4 text-center flex-shrink-0">{index + 1}</span>
+                {/* Icono */}
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm shadow-orange-200">
+                  {item.productName.charAt(0).toUpperCase()}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800 text-xs truncate group-hover:text-orange-700 transition-colors">{item.productName}</p>
+                  <p className="text-slate-400 text-[10px] font-medium mt-0.5">{formatCOP((item.unitPrice as any)?.amount || 0)} × {item.quantity}</p>
+                </div>
+                {/* Controles cantidad */}
+                <div className="flex items-center bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                  <button
+                    className="w-7 h-7 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-500 font-bold text-sm transition-all border-r border-slate-100"
+                    onClick={() => actions.updateQuantity(item.productId, item.quantity - 1)}
+                  >−</button>
+                  <span className="w-7 text-center font-black text-xs text-slate-900">{item.quantity}</span>
+                  <button
+                    className="w-7 h-7 flex items-center justify-center hover:bg-green-50 text-slate-400 hover:text-green-600 font-bold text-sm transition-all border-l border-slate-100"
+                    onClick={() => handleIncrement(item.productId, item.quantity)}
+                  >+</button>
+                </div>
+                {/* Total */}
+                <div className="w-[72px] text-right font-black text-xs text-slate-900 flex-shrink-0 tabular-nums">
+                  {formatCOP(((item.unitPrice as any)?.amount || 0) * item.quantity)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ Sección financiera ═══ */}
+      <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 px-5 pt-4 pb-4">
+
+        {/* Cupón */}
+        <div className="mb-3">
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between bg-emerald-50 rounded-xl px-3.5 py-2.5 border border-emerald-200">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-emerald-700 font-bold text-xs">{appliedCoupon.code} <span className="font-medium text-emerald-600">· −{(appliedCoupon.discount * 100).toFixed(0)}%</span></span>
+              </div>
+              <button onClick={handleRemoveCoupon} className="text-[10px] text-red-400 font-bold hover:text-red-600 transition-colors cursor-pointer uppercase tracking-wide">Quitar</button>
             </div>
           ) : (
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Ingresar cupón"
-                className="flex-1 px-3 py-2 border-2 border-gray-400 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-gray-700 placeholder-gray-300 transition-colors"
+                placeholder="🎟️ Código de cupón"
+                className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-200 focus:border-orange-300 outline-none text-slate-800 placeholder-slate-400 transition-all"
                 value={couponCode}
                 onChange={(e) => { setCouponCode(e.target.value); setCouponError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
               />
               <button
                 onClick={handleApplyCoupon}
-                className="px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-700 transition-colors"
-              >
-                Aplicar
-              </button>
+                className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-600 text-xs font-bold rounded-lg transition-all cursor-pointer"
+              >Aplicar</button>
             </div>
           )}
-          {couponError && <p className="text-red-500 text-xs mt-1 font-medium">{couponError}</p>}
+          {couponError && <p className="text-red-400 text-[10px] mt-1 ml-1 font-medium">{couponError}</p>}
         </div>
 
-        {/* --- Desglose de totales --- */}
-        <div className="flex justify-between text-gray-500 text-sm mb-1 font-medium">
-          <span>Subtotal</span>
-          <span className="text-gray-900">{formatCOP(subtotal)}</span>
-        </div>
-        {appliedCoupon && (
-          <div className="flex justify-between text-green-600 text-sm mb-1 font-bold">
-            <span>Descuento ({(appliedCoupon.discount * 100).toFixed(0)}%)</span>
-            <span>− {formatCOP(discountAmount)}</span>
+        {/* Totales */}
+        <div className="space-y-1 mb-3 text-xs">
+          <div className="flex justify-between text-slate-500 font-medium">
+            <span>Subtotal</span><span className="text-slate-700 font-semibold tabular-nums">{formatCOP(subtotal)}</span>
           </div>
-        )}
-        <div className="flex justify-between text-gray-500 text-sm mb-4 font-medium">
-          <span>IVA (19%)</span>
-          <span className="text-gray-900">{formatCOP(tax)}</span>
+          {appliedCoupon && (
+            <div className="flex justify-between text-emerald-600 font-bold">
+              <span>Descuento ({(appliedCoupon.discount * 100).toFixed(0)}%)</span>
+              <span className="tabular-nums">− {formatCOP(discountAmount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-slate-500 font-medium">
+            <span>IVA (19%)</span><span className="text-slate-700 font-semibold tabular-nums">{formatCOP(tax)}</span>
+          </div>
         </div>
-        <div className="flex justify-between items-end mb-6">
-          <span className="text-gray-400 font-bold text-xs uppercase tracking-widest">Total a pagar</span>
-          <span className="text-4xl font-black text-gray-900 tracking-tighter">
-            {formatCOP(total)}
-          </span>
+
+        {/* Total destacado */}
+        <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl px-4 py-3 text-white">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-orange-500 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="font-bold text-xs uppercase tracking-wider text-white/70">Total</span>
+          </div>
+          <span className="text-xl font-black tracking-tight tabular-nums">{formatCOP(total)}</span>
         </div>
-        <button 
+
+        {/* Botón COBRAR */}
+        <button
           onClick={() => setShowCheckout(true)}
-          className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-lg shadow-lg disabled:bg-gray-300 disabled:text-gray-500 transition-all"
           disabled={cart.items.length === 0}
+          className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-xl text-sm shadow-lg shadow-orange-500/25 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
           COBRAR {cart.items.length > 0 && formatCOP(total)}
+          <kbd className="ml-0.5 px-1.5 py-0.5 bg-white/20 rounded text-[9px] font-mono">F4</kbd>
         </button>
       </div>
 
+      {/* ═══ Modal Checkout ═══ */}
       {showCheckout && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-10 flex flex-col p-8 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-2xl font-black text-gray-900">Finalizar Venta</h3>
-            <button onClick={() => setShowCheckout(false)} className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500 hover:bg-gray-300">X</button>
-          </div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
+            {/* Header checkout */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 px-6 py-5 text-white">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-black">Finalizar Venta</h3>
+                  <p className="text-white/50 text-[10px] uppercase tracking-widest font-bold mt-0.5">Confirma los datos de pago</p>
+                </div>
+                <button onClick={() => setShowCheckout(false)} className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white/60 hover:text-white transition-all cursor-pointer">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {/* Total en header */}
+              <div className="mt-4 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm flex items-center justify-between">
+                <span className="text-white/60 text-xs font-bold uppercase tracking-wider">Total a Pagar</span>
+                <div className="text-right">
+                  {appliedCoupon && (
+                    <div className="flex items-center gap-2 justify-end mb-0.5">
+                      <span className="line-through text-white/40 text-xs">{formatCOP(subtotal + Math.round(subtotal * 0.19))}</span>
+                      <span className="bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">−{(appliedCoupon.discount * 100).toFixed(0)}%</span>
+                    </div>
+                  )}
+                  <span className="text-2xl font-black tracking-tight">{formatCOP(total)}</span>
+                </div>
+              </div>
+            </div>
 
-          <div className="flex-1 flex flex-col gap-6">
-            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center">
-              <span className="text-blue-500 font-bold text-xs uppercase tracking-widest block mb-2">Total a Pagar</span>
-              {appliedCoupon && (
-                <div className="flex justify-center items-center gap-2 mb-2">
-                  <span className="line-through text-blue-300 text-lg">{formatCOP(subtotal + Math.round(subtotal * 0.19))}</span>
-                  <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">🎟️ -{(appliedCoupon.discount * 100).toFixed(0)}%</span>
+            {/* Body checkout */}
+            <div className="p-6 flex flex-col gap-4 max-h-[50vh] overflow-y-auto">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Cédula del Cliente (Opcional)
+                </label>
+                <input type="text" placeholder="Ej: 1020304050"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-200 focus:border-orange-400 focus:bg-white text-slate-900 text-sm font-medium placeholder-slate-400 outline-none transition-all"
+                  value={buyerId} onChange={(e) => setBuyerId(e.target.value)} />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Atendido por
+                </label>
+                <select
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-200 focus:border-orange-400 focus:bg-white text-slate-900 text-sm font-medium appearance-none outline-none transition-all"
+                  value={sellerId} onChange={(e) => setSellerId(e.target.value)}>
+                  <option value="">Selecciona un cajero...</option>
+                  {useUsersStore.getState().cashiers.filter(c => c.isActive).map(cashier => (
+                    <option key={cashier.id} value={cashier.name}>{cashier.name} (CC: {cashier.cedula})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  Efectivo Recibido (COP)
+                </label>
+                <input type="number" placeholder="Ej: 50000"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-200 focus:border-orange-400 focus:bg-white text-slate-900 font-black text-xl placeholder-slate-300 outline-none transition-all tabular-nums"
+                  value={cashReceived} onChange={(e) => setCashReceived(e.target.value)} />
+              </div>
+
+              {Number(cashReceived) > 0 && (
+                <div className={`p-4 rounded-xl font-bold flex items-center justify-between text-sm ${change >= 0 ? 'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border border-emerald-200' : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-600 border border-red-200'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${change >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`}>
+                      {change >= 0 ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.068 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium">{change >= 0 ? 'Cambio:' : 'Falta:'}</span>
+                  </div>
+                  <span className="text-lg font-black tabular-nums">{formatCOP(Math.abs(change))}</span>
                 </div>
               )}
-              <span className="text-5xl font-black text-blue-700">{formatCOP(total)}</span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Cédula del Cliente (Opcional)</label>
-              <input 
-                type="text" 
-                placeholder="Ej: 1020304050" 
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
-                value={buyerId}
-                onChange={(e) => setBuyerId(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Atendido por</label>
-              <select 
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium bg-white"
-                value={sellerId}
-                onChange={(e) => setSellerId(e.target.value)}
+            {/* Footer checkout */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={handleFinishSale}
+                disabled={Number(cashReceived) < total || isSubmitting}
+                className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-xl text-sm shadow-lg shadow-orange-500/25 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
               >
-                <option value="">Selecciona un cajero...</option>
-                {useUsersStore.getState().cashiers.filter(c => c.isActive).map(cashier => (
-                  <option key={cashier.id} value={cashier.name}>{cashier.name} (CC: {cashier.cedula})</option>
-                ))}
-              </select>
+                {isSubmitting ? (
+                  <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>PROCESANDO...</>
+                ) : (
+                  <><svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>CONFIRMAR VENTA</>
+                )}
+              </button>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Efectivo Recibido (COP)</label>
-              <input 
-                type="number" 
-                placeholder="Ej: 50000" 
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-gray-900 font-black text-xl"
-                value={cashReceived}
-                onChange={(e) => setCashReceived(e.target.value)}
-              />
-            </div>
-
-            {Number(cashReceived) > 0 && (
-              <div className={`p-4 rounded-xl font-bold flex justify-between ${change >= 0 ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                <span>{change >= 0 ? 'Cambio a devolver:' : 'Falta dinero:'}</span>
-                <span className="text-xl">{formatCOP(Math.abs(change))}</span>
-              </div>
-            )}
           </div>
-
-          <button 
-            onClick={handleFinishSale}
-            disabled={Number(cashReceived) < total || isSubmitting}
-            className="w-full mt-6 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-lg shadow-lg disabled:bg-gray-300 disabled:text-gray-500 transition-all flex justify-center items-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                PROCESANDO...
-              </>
-            ) : 'CONFIRMAR VENTA'}
-          </button>
         </div>
       )}
 
-      {/* --- Factura/Ticket --- */}
-      {completedSale && (
-        <ReceiptPreview 
-          sale={completedSale} 
-          onClose={handleCloseReceipt} 
-        />
-      )}
+      {completedSale && <ReceiptPreview sale={completedSale} onClose={handleCloseReceipt} />}
     </div>
   );
 };
